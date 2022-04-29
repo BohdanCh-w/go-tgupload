@@ -1,13 +1,13 @@
 package config
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 
 	"github.com/kelseyhightower/envconfig"
+	"gopkg.in/yaml.v2"
 )
 
 type Config struct {
@@ -26,7 +26,7 @@ type Config struct {
 }
 
 func (c *Config) Parse(path string) error {
-	if err := jsonToEnv(path); err != nil {
+	if err := yamlToEnv(path); err != nil {
 		return fmt.Errorf("config parse failed: %v", err)
 	}
 
@@ -49,16 +49,15 @@ func (c *Config) Parse(path string) error {
 	return nil
 }
 
-func jsonToEnv(path string) error {
+func yamlToEnv(path string) error {
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
 		return fmt.Errorf("read failed: %v", err)
 	}
 
 	var vars map[string]interface{}
-	err = json.Unmarshal(data, &vars)
-	if err != nil {
-		return fmt.Errorf("json parse failed: %v", err)
+	if err := yaml.Unmarshal(data, &vars); err != nil {
+		return fmt.Errorf("parse version data: %w", err)
 	}
 
 	for key, value := range vars {

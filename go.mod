@@ -6,6 +6,7 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8
 	gitlab.com/toby3d/telegraph v1.2.1
+	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (

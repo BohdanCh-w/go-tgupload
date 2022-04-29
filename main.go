@@ -15,7 +15,7 @@ func main() {
 		config = &config.Config{Logger: logger}
 	)
 
-	configPath := flag.String("config", "config.json", "Path to configuration file")
+	configPath := flag.String("config", "config.yaml", "Path to configuration file")
 	flag.Parse()
 
 	if *configPath == "" {
