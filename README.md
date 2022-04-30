@@ -6,7 +6,7 @@
 ## How to use
 - [download program](https://github.com/ZUMORl/GoTeleghraphUploader/releases) 
 - create or copy [config.yaml](https://github.com/ZUMORl/PsdCompiler/blob/master/config.yaml) file. Place them in same directory
-- fill config.yaml with [correct parameters](##Configuration)
+- fill config.yaml with [correct parameters](#configuration)
 - start program
 
 ---
@@ -32,7 +32,7 @@ intermid_data_load_path: "intermid_data.json"
 | img_folder | Path to folder with images | path | true |
 | author_name | Full author name | string | true |
 | author_short_name | Short Author Name | string | false |
-| auth_token | Telegraph identification token. Instruction how to find it - [here](##Accessing_telegraph_access_token). You won't be able to edit generated article if you don't set this field | string | false |
+| auth_token | Telegraph identification token. Instruction how to find it - [here](#accessing-telegraph-access-token). You won't be able to edit generated article if you don't set this field | string | false |
 | output | Path to file with resulting article url if needed | path | false |
 | auto_open | Set true if you want to automatically open the article in browser | bool | false |
 | intermid_data_enabled | Allows you to save uploaded images if some of them failed to load correctly (Don't use if you don't understand it's purpose) | bool | false |
