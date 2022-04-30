@@ -16,11 +16,14 @@ program is configured via config.yaml which has such structure:
 ```
 title: "Article title here"
 img_folder: "path/to/img/folder"
-author_name: "Author Name Full"
-author_short_name: "Short Author Name"
 auth_token: "abcdefghijklmnopqrstuvwxyz123"
 output: "chapter_link.txt"
 auto_open: true
+
+author_name: "Author Name Full"
+author_short_name: "Short Author Name"
+author_url: "https_//t.me/autor_link"
+
 intermid_data_enabled: true
 intermid_data_save_path: "intermid_data.json"
 intermid_data_load_path: "intermid_data.json"
