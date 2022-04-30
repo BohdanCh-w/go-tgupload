@@ -30,9 +30,10 @@ intermid_data_load_path: "intermid_data.json"
 |---|---|---|---|
 | title | Title of the acticle | string | true |
 | img_folder | Path to folder with images | path | true |
+| auth_token | Telegraph identification token. Instruction how to find it - [here](#accessing-telegraph-access-token). You won't be able to edit generated article if you don't set this field | string | false |
 | author_name | Full author name | string | true |
 | author_short_name | Short Author Name | string | false |
-| auth_token | Telegraph identification token. Instruction how to find it - [here](#accessing-telegraph-access-token). You won't be able to edit generated article if you don't set this field | string | false |
+| author_url | Link to follow on author click | url | false |
 | output | Path to file with resulting article url if needed | path | false |
 | auto_open | Set true if you want to automatically open the article in browser | bool | false |
 | intermid_data_enabled | Allows you to save uploaded images if some of them failed to load correctly (Don't use if you don't understand it's purpose) | bool | false |
