@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 
 	"gitlab.com/toby3d/telegraph"
 )
@@ -37,11 +38,17 @@ func WriteFileJSON(filename string, obj interface{}) error {
 }
 
 func CreateDomFromImages(images map[string]string) []telegraph.Node {
+	sortedKeys := make([]string, 0, len(images))
+	for k := range images {
+		sortedKeys = append(sortedKeys, k)
+	}
+	sort.Strings(sortedKeys)
+
 	result := make([]telegraph.Node, 0, len(images))
-	for _, image := range images {
+	for _, key := range sortedKeys {
 		result = append(result, telegraph.NodeElement{
 			Tag:      "img",
-			Attrs:    map[string]string{"src": image},
+			Attrs:    map[string]string{"src": images[key]},
 			Children: nil,
 		})
 	}

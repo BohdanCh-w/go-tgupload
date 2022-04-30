@@ -60,8 +60,10 @@ func (app *App) Run() error {
 	html := helpers.CreateDomFromImages(images)
 
 	page, err := account.CreatePage(telegraph.Page{
-		Title:   app.Cfg.Title,
-		Content: html,
+		Title:      app.Cfg.Title,
+		AuthorName: app.Cfg.AuthorName,
+		AuthorURL:  app.Cfg.AuthorURL,
+		Content:    html,
 	}, true)
 	if err != nil {
 		return fmt.Errorf("Failed to create page: %v", err)
@@ -71,14 +73,10 @@ func (app *App) Run() error {
 		return fmt.Errorf("Failed to save result")
 	}
 
-	if ok := app.getResult("https://telegra.ph/Lishe-Mіj-Malenkij-Demon-04-29-6"); !ok {
-		return fmt.Errorf("Failed to save result")
-	}
-
 	return nil
 }
 
-func (app *App) uploadImages(images map[string]string) (map[string]string, bool) {
+func (app *App) uploadImages(preImages map[string]string) (map[string]string, bool) {
 	imageFiles, err := ioutil.ReadDir(app.Cfg.PathToImgFolder)
 	if err != nil {
 		app.Cfg.Logger.Fatal(err)
@@ -89,14 +87,13 @@ func (app *App) uploadImages(images map[string]string) (map[string]string, bool)
 		ok = true
 	)
 
-	if images == nil {
-		images = map[string]string{}
-	}
+	images := map[string]string{}
 
 	for _, file := range imageFiles {
 		path := filepath.Join(app.Cfg.PathToImgFolder, file.Name())
 
-		if _, ok := images[path]; ok {
+		if _, ok := preImages[path]; ok {
+			images[path] = preImages[path]
 			continue
 		}
 
@@ -104,7 +101,6 @@ func (app *App) uploadImages(images map[string]string) (map[string]string, bool)
 
 		go func(path string) {
 			defer wg.Done()
-			app.Cfg.Logger.Printf("Posting image on path: %s", path)
 
 			images[path], err = helpers.PostImage(path)
 			if err != nil {

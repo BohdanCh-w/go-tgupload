@@ -13,12 +13,14 @@ import (
 type Config struct {
 	Logger           *log.Logger
 	AuthToken        string `envconfig:"auth_token"`
-	Title            string `envconfig:"title"               required:"true"`
-	AuthorName       string `envconfig:"author_name"         required:"true"`
-	AuthorShortName  string `envconfig:"author_short_name"`
 	PathToImgFolder  string `envconfig:"img_folder"          required:"true"`
 	PathToOutputFile string `envconfig:"output"`
 	AutoOpen         bool   `envconfig:"auto_open"`
+
+	Title           string `envconfig:"title"               required:"true"`
+	AuthorName      string `envconfig:"author_name"         required:"true"`
+	AuthorShortName string `envconfig:"author_short_name"`
+	AuthorURL       string `envconfig:"author_url"`
 
 	IntermidDataEnabled  bool   `envconfig:"intermid_data_enabled"`
 	IntermidDataSavePath string `envconfig:"intermid_data_save_path"`
