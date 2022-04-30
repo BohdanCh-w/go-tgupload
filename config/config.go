@@ -12,7 +12,7 @@ import (
 
 type Config struct {
 	Logger           *log.Logger
-	AuthToken        string `envconfig:"auth_token"          required:"true"`
+	AuthToken        string `envconfig:"auth_token"`
 	Title            string `envconfig:"title"               required:"true"`
 	AuthorName       string `envconfig:"author_name"         required:"true"`
 	AuthorShortName  string `envconfig:"author_short_name"`

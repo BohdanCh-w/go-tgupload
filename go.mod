@@ -1,4 +1,4 @@
-module github.com/Bohdan-TheOne/GoTeleghraphUploader
+module github.com/ZUMORl/GoTeleghraphUploader
 
 go 1.17
 

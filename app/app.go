@@ -9,10 +9,11 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/Bohdan-TheOne/GoTeleghraphUploader/config"
-	"github.com/Bohdan-TheOne/GoTeleghraphUploader/helpers"
 	"github.com/pkg/browser"
 	"gitlab.com/toby3d/telegraph"
+
+	"github.com/ZUMORl/GoTeleghraphUploader/config"
+	"github.com/ZUMORl/GoTeleghraphUploader/helpers"
 )
 
 type App struct {
@@ -33,7 +34,9 @@ func (app *App) Run() error {
 		log.Printf("Failed to connect to telegraph: %v", err)
 	}
 
-	account.AccessToken = app.Cfg.AuthToken
+	if app.Cfg.AuthToken != "" {
+		account.AccessToken = app.Cfg.AuthToken
+	}
 
 	intermidiateImageData, err = app.loadIntermidiateImageData()
 	if err != nil {

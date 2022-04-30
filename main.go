@@ -5,8 +5,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/Bohdan-TheOne/GoTeleghraphUploader/app"
-	"github.com/Bohdan-TheOne/GoTeleghraphUploader/config"
+	"github.com/ZUMORl/GoTeleghraphUploader/app"
+	"github.com/ZUMORl/GoTeleghraphUploader/config"
 )
 
 func main() {
