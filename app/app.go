@@ -3,13 +3,8 @@ package app
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"log"
 	"os"
-	"path/filepath"
-	"sync"
 
-	"github.com/pkg/browser"
 	"gitlab.com/toby3d/telegraph"
 
 	"github.com/ZUMORl/GoTeleghraphUploader/config"
@@ -24,18 +19,11 @@ func (app *App) Run() error {
 	var (
 		log                   = app.Cfg.Logger
 		intermidiateImageData map[string]string
+		account, err          = app.telegraphLogin()
 	)
 
-	account, err := telegraph.CreateAccount(telegraph.Account{
-		AuthorName: app.Cfg.AuthorName,
-		ShortName:  app.Cfg.AuthorShortName,
-	})
 	if err != nil {
-		log.Printf("Failed to connect to telegraph: %v", err)
-	}
-
-	if app.Cfg.AuthToken != "" {
-		account.AccessToken = app.Cfg.AuthToken
+		return err
 	}
 
 	intermidiateImageData, err = app.loadIntermidiateImageData()
@@ -44,9 +32,30 @@ func (app *App) Run() error {
 	}
 
 	images, ok := app.uploadImages(intermidiateImageData)
+	imglist := helpers.SortedValuesByKey(images)
+
+	if app.Cfg.CaptionImgPath != "" {
+		var path string
+		var ok bool
+
+		if path, ok = intermidiateImageData[app.Cfg.CaptionImgPath]; !ok {
+			path, err = postImage(app.Cfg.CaptionImgPath)
+			if err != nil {
+				log.Printf("post caption image failed: %v", err)
+
+				return err
+			}
+
+			images[app.Cfg.CaptionImgPath] = path
+		}
+
+		imglist = append(imglist, path)
+	}
 
 	if app.Cfg.IntermidDataSavePath != "" {
-		if err := helpers.WriteFileJSON(app.Cfg.IntermidDataSavePath, images); err != nil {
+		save_data := helpers.JoinStringMaps(intermidiateImageData, images)
+
+		if err := helpers.WriteFileJSON(app.Cfg.IntermidDataSavePath, save_data); err != nil {
 			log.Printf("Failed to save intermidiate data")
 		}
 	}
@@ -57,7 +66,7 @@ func (app *App) Run() error {
 		return fmt.Errorf("Not all images uploaded")
 	}
 
-	html := helpers.CreateDomFromImages(images)
+	html := helpers.CreateDomFromImages(imglist)
 
 	page, err := account.CreatePage(telegraph.Page{
 		Title:      app.Cfg.Title,
@@ -74,45 +83,6 @@ func (app *App) Run() error {
 	}
 
 	return nil
-}
-
-func (app *App) uploadImages(preImages map[string]string) (map[string]string, bool) {
-	imageFiles, err := ioutil.ReadDir(app.Cfg.PathToImgFolder)
-	if err != nil {
-		app.Cfg.Logger.Fatal(err)
-	}
-
-	var (
-		wg sync.WaitGroup
-		ok = true
-	)
-
-	images := map[string]string{}
-
-	for _, file := range imageFiles {
-		path := filepath.Join(app.Cfg.PathToImgFolder, file.Name())
-
-		if _, ok := preImages[path]; ok {
-			images[path] = preImages[path]
-			continue
-		}
-
-		wg.Add(1)
-
-		go func(path string) {
-			defer wg.Done()
-
-			images[path], err = helpers.PostImage(path)
-			if err != nil {
-				ok = false
-				delete(images, path)
-				app.Cfg.Logger.Printf("PostImage failed with error: %v on path: %s", err, path)
-			}
-		}(path)
-	}
-
-	wg.Wait()
-	return images, ok
 }
 
 func (app *App) loadIntermidiateImageData() (map[string]string, error) {
@@ -137,28 +107,4 @@ func (app *App) loadIntermidiateImageData() (map[string]string, error) {
 	}
 
 	return result, nil
-}
-
-func (app *App) getResult(url string) (ok bool) {
-	if app.Cfg.AutoOpen {
-		if err := browser.OpenURL(url); err != nil {
-			log.Printf("Failed to open url: %v", err)
-		} else {
-			ok = true
-		}
-	}
-
-	if app.Cfg.PathToOutputFile != "" {
-		if err := helpers.WriteFileJSON(app.Cfg.PathToOutputFile, url); err != nil {
-			log.Printf("Failed to open url: %v", err)
-		} else {
-			ok = true
-		}
-	}
-
-	if !ok {
-		log.Printf("Result url: %s", url)
-	}
-
-	return ok
 }

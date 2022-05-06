@@ -1,22 +1,12 @@
 package helpers
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
-	"io/ioutil"
-	"mime/multipart"
-	"net/http"
 	"os"
-	"path/filepath"
 	"sort"
 
 	"gitlab.com/toby3d/telegraph"
-)
-
-const (
-	telegraphUploadAPI = "https://telegra.ph/upload"
 )
 
 func WriteFileJSON(filename string, obj interface{}) error {
@@ -37,89 +27,45 @@ func WriteFileJSON(filename string, obj interface{}) error {
 	return nil
 }
 
-func CreateDomFromImages(images map[string]string) []telegraph.Node {
-	sortedKeys := make([]string, 0, len(images))
-	for k := range images {
-		sortedKeys = append(sortedKeys, k)
-	}
-	sort.Strings(sortedKeys)
+func JoinStringMaps(maps ...map[string]string) map[string]string {
+	ret := make(map[string]string)
 
+	for _, m := range maps {
+		for key, value := range m {
+			ret[key] = value
+		}
+	}
+
+	return ret
+}
+
+func SortedValuesByKey(m map[string]string) []string {
+	var (
+		keys   = make([]string, 0, len(m))
+		values = make([]string, 0, len(m))
+	)
+
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	for _, key := range keys {
+		values = append(values, m[key])
+	}
+
+	return values
+}
+
+func CreateDomFromImages(images []string) []telegraph.Node {
 	result := make([]telegraph.Node, 0, len(images))
-	for _, key := range sortedKeys {
+	for _, img := range images {
 		result = append(result, telegraph.NodeElement{
 			Tag:      "img",
-			Attrs:    map[string]string{"src": images[key]},
+			Attrs:    map[string]string{"src": img},
 			Children: nil,
 		})
 	}
 
 	return result
-}
-
-func PostImage(filename string) (string, error) {
-	file, err := os.Open(filename)
-	if err != nil {
-		return "", err
-	}
-	defer file.Close()
-
-	body := &bytes.Buffer{}
-	writer := multipart.NewWriter(body)
-
-	part, err := writer.CreateFormFile("file", filepath.Base(file.Name()))
-	if err != nil {
-		return "", err
-	}
-
-	io.Copy(part, file)
-	writer.Close()
-
-	request, err := http.NewRequest(http.MethodPost, telegraphUploadAPI, body)
-	if err != nil {
-		return "", err
-	}
-
-	request.Header.Add("Content-Type", writer.FormDataContentType())
-	client := &http.Client{}
-
-	response, err := client.Do(request)
-	if err != nil {
-		return "", err
-	}
-	defer response.Body.Close()
-
-	content, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		return "", err
-	}
-
-	return readResponse(content)
-}
-
-func readResponse(content []byte) (string, error) {
-	var resp []responseOK
-
-	if err := json.Unmarshal(content, &resp); err != nil {
-		var errResp responseErr
-
-		if errErr := json.Unmarshal(content, &errResp); errErr != nil {
-			return "", fmt.Errorf("%v - while trying to hanle - %v", errErr, err)
-		}
-
-		return "", fmt.Errorf("Error response: %v", errResp.Err)
-	}
-
-	if len(resp) != 1 {
-		return "", fmt.Errorf("response has invalid length - %d", len(resp))
-	}
-
-	return resp[0].Src, nil
-}
-
-type responseOK struct {
-	Src string `json:"src"`
-}
-
-type responseErr struct {
-	Err string `json:"error"`
 }
