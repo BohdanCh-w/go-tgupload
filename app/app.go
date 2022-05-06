@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"os"
 
-	"gitlab.com/toby3d/telegraph"
-
 	"github.com/ZUMORl/GoTeleghraphUploader/config"
 	"github.com/ZUMORl/GoTeleghraphUploader/helpers"
 )
@@ -68,21 +66,7 @@ func (app *App) Run() error {
 
 	html := helpers.CreateDomFromImages(imglist)
 
-	page, err := account.CreatePage(telegraph.Page{
-		Title:      app.Cfg.Title,
-		AuthorName: app.Cfg.AuthorName,
-		AuthorURL:  app.Cfg.AuthorURL,
-		Content:    html,
-	}, true)
-	if err != nil {
-		return fmt.Errorf("Failed to create page: %v", err)
-	}
-
-	if ok := app.getResult(page.URL); !ok {
-		return fmt.Errorf("Failed to save result")
-	}
-
-	return nil
+	return app.createPage(account, html)
 }
 
 func (app *App) loadIntermidiateImageData() (map[string]string, error) {
