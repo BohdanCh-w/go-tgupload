@@ -16,6 +16,7 @@ program is configured via config.yaml which has such structure:
 ```
 title: "Article title here"
 img_folder: "path/to/img/folder"
+caption_img_path: "path/to/caption.png"
 auth_token: "abcdefghijklmnopqrstuvwxyz123"
 output: "chapter_link.txt"
 auto_open: true
@@ -33,6 +34,7 @@ intermid_data_load_path: "intermid_data.json"
 |---|---|---|---|
 | title | Title of the acticle | string | true |
 | img_folder | Path to folder with images | path | true |
+| caption_img_path | Path to caption image (placed in the end) | path | false |
 | auth_token | Telegraph identification token. Instruction how to find it - [here](#accessing-telegraph-access-token). You won't be able to edit generated article if you don't set this field | string | false |
 | author_name | Full author name | string | true |
 | author_short_name | Short Author Name | string | false |
