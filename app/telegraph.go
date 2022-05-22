@@ -62,9 +62,7 @@ func (app *App) getResult(url string) (ok bool) {
 		}
 	}
 
-	if !ok {
-		app.Cfg.Logger.Printf("Result url: %s", url)
-	}
+	app.Cfg.Logger.Printf("Article posted - url: %s", url)
 
 	return ok
 }

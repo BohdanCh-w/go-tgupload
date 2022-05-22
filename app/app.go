@@ -32,22 +32,18 @@ func (app *App) Run() error {
 	images, ok := app.uploadImages(intermidiateImageData)
 	imglist := helpers.SortedValuesByKey(images)
 
-	if app.Cfg.CaptionImgPath != "" {
-		var path string
-		var ok bool
+	imglist, err = app.addTitleImage(intermidiateImageData, images, imglist)
+	if err != nil {
+		log.Printf("post title image failed: %v", err)
 
-		if path, ok = intermidiateImageData[app.Cfg.CaptionImgPath]; !ok {
-			path, err = postImage(app.Cfg.CaptionImgPath)
-			if err != nil {
-				log.Printf("post caption image failed: %v", err)
+		return err
+	}
 
-				return err
-			}
+	imglist, err = app.addCaption(intermidiateImageData, images, imglist)
+	if err != nil {
+		log.Printf("post caption image failed: %v", err)
 
-			images[app.Cfg.CaptionImgPath] = path
-		}
-
-		imglist = append(imglist, path)
+		return err
 	}
 
 	if app.Cfg.IntermidDataSavePath != "" {
@@ -91,4 +87,48 @@ func (app *App) loadIntermidiateImageData() (map[string]string, error) {
 	}
 
 	return result, nil
+}
+
+func (app *App) addCaption(intermidData map[string]string, images map[string]string, imglist []string) ([]string, error) {
+	if app.Cfg.CaptionImgPath == "" {
+		return imglist, nil
+	}
+
+	var err error
+
+	path, ok := intermidData[app.Cfg.CaptionImgPath]
+	if !ok {
+		path, err = postImage(app.Cfg.CaptionImgPath)
+		if err != nil {
+			return nil, err
+		}
+
+		images[app.Cfg.CaptionImgPath] = path
+	}
+
+	imglist = append(imglist, path)
+
+	return imglist, nil
+}
+
+func (app *App) addTitleImage(intermidData map[string]string, images map[string]string, imglist []string) ([]string, error) {
+	if app.Cfg.TitleImgPath == "" {
+		return imglist, nil
+	}
+
+	var err error
+
+	path, ok := intermidData[app.Cfg.TitleImgPath]
+	if !ok {
+		path, err = postImage(app.Cfg.TitleImgPath)
+		if err != nil {
+			return nil, err
+		}
+
+		images[app.Cfg.TitleImgPath] = path
+	}
+
+	imglist = append([]string{path}, imglist...)
+
+	return imglist, nil
 }

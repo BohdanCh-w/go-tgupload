@@ -14,6 +14,7 @@ type Config struct {
 	Logger           *log.Logger
 	AuthToken        string `envconfig:"auth_token"`
 	PathToImgFolder  string `envconfig:"img_folder"          required:"true"`
+	TitleImgPath     string `envconfig:"title_img_path"`
 	CaptionImgPath   string `envconfig:"caption_img_path"`
 	PathToOutputFile string `envconfig:"output"`
 	AutoOpen         bool   `envconfig:"auto_open"`
