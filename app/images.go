@@ -1,49 +1,108 @@
 package app
 
 import (
+	"context"
+	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"sync"
+
+	"github.com/hashicorp/go-multierror"
+	"golang.org/x/sync/semaphore"
 )
 
-func (app *App) uploadImages(preImages map[string]string) (map[string]string, bool) {
+func (app *App) uploadImages(cache map[string]string) (map[string]string, error) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	imageFiles, err := ioutil.ReadDir(app.Cfg.PathToImgFolder)
 	if err != nil {
 		app.Cfg.Logger.Fatal(err)
 	}
 
 	var (
-		wg sync.WaitGroup
-		mu sync.Mutex
-		ok = true
+		sem     = semaphore.NewWeighted(5)
+		images  = make(map[string]string)
+		imgChan = make(chan Image)
+		wg      sync.WaitGroup
+		done    = make(chan struct{})
+		mErr    multierror.Error
 	)
 
-	images := map[string]string{}
+	go func() { // collector
+		defer close(done)
 
-	for _, file := range imageFiles {
-		path := filepath.Join(app.Cfg.PathToImgFolder, file.Name())
+		for img := range imgChan {
+			images[img.path] = img.url
 
-		if _, ok := preImages[path]; ok {
-			images[path] = preImages[path]
-			continue
+			multierror.Append(&mErr, img.err)
+		}
+	}()
+
+	for _, f := range imageFiles { // producer
+		if err := sem.Acquire(ctx, 1); err != nil {
+			break
 		}
 
 		wg.Add(1)
 
-		go func(path string) {
-			defer wg.Done()
-			mu.Lock()
-			defer mu.Unlock()
+		file := f
 
-			images[path], err = postImage(path)
-			if err != nil {
-				ok = false
-				delete(images, path)
-				app.Cfg.Logger.Printf("PostImage failed with error: %v on path: %s", err, path)
+		go func() {
+			defer wg.Done()
+			defer sem.Release(1)
+
+			img := Image{
+				path: filepath.Join(app.Cfg.PathToImgFolder, file.Name()),
 			}
-		}(path)
+
+			defer func() {
+				imgChan <- img
+			}()
+
+			if _, ok := cache[img.path]; ok {
+				img.url = cache[img.path]
+
+				return
+			}
+
+			defer delete(cache, img.path)
+
+			data, err := os.ReadFile(img.path)
+			if err != nil {
+				img.err = fmt.Errorf("read image %s: %w", file.Name(), err)
+
+				return
+			}
+
+			res, err := postImage(file.Name(), data)
+			if err != nil {
+				img.err = fmt.Errorf("post image %s: %w", file.Name(), err)
+
+				return
+			}
+
+			img.url = res
+
+			return
+		}()
 	}
 
 	wg.Wait()
-	return images, ok
+
+	close(imgChan)
+
+	<-done
+
+	return images, mErr.ErrorOrNil()
+}
+
+type Image struct {
+	path string
+	data []byte
+	hash string
+	url  string
+
+	err error
 }

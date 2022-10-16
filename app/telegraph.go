@@ -13,7 +13,6 @@ func (app *App) telegraphLogin() (*telegraph.Account, error) {
 		AuthorName: app.Cfg.AuthorName,
 		ShortName:  app.Cfg.AuthorShortName,
 	})
-
 	if err != nil {
 		app.Cfg.Logger.Printf("Failed to connect to telegraph: %v", err)
 

@@ -1,6 +1,9 @@
 title: "Article title here"
 img_folder: "path/to/img/folder"
-caption_img_path: "path/to/caption.png"
+title_img_path: 
+  - "path/to/title.png"
+caption_img_path: 
+  - "path/to/caption.png"
 auth_token: "abcdefghijklmnopqrstuvwxyz123"
 output: "chapter_link.txt"
 auto_open: true

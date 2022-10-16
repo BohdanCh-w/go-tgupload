@@ -4,34 +4,25 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
-	"os"
-	"path/filepath"
 )
 
 const (
 	telegraphUploadAPI = "https://telegra.ph/upload"
 )
 
-func postImage(filename string) (string, error) {
-	file, err := os.Open(filename)
-	if err != nil {
-		return "", err
-	}
-	defer file.Close()
-
+func postImage(name string, data []byte) (string, error) {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 
-	part, err := writer.CreateFormFile("file", filepath.Base(file.Name()))
+	part, err := writer.CreateFormFile("file", name)
 	if err != nil {
 		return "", err
 	}
 
-	io.Copy(part, file)
+	part.Write(data)
 	writer.Close()
 
 	request, err := http.NewRequest(http.MethodPost, telegraphUploadAPI, body)

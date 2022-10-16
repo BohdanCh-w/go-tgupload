@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/ZUMORl/GoTeleghraphUploader/config"
 	"github.com/ZUMORl/GoTeleghraphUploader/helpers"
@@ -29,7 +30,13 @@ func (app *App) Run() error {
 		log.Printf("intermidiate data load failed: %v", err)
 	}
 
-	images, ok := app.uploadImages(intermidiateImageData)
+	images, err := app.uploadImages(intermidiateImageData)
+	if err != nil {
+		log.Printf("Failed to upload images")
+
+		return fmt.Errorf("upload images failed: %w", err)
+	}
+
 	imglist := helpers.SortedValuesByKey(images)
 
 	imglist, err = app.addTitleImage(intermidiateImageData, images, imglist)
@@ -52,12 +59,6 @@ func (app *App) Run() error {
 		if err := helpers.WriteFileJSON(app.Cfg.IntermidDataSavePath, save_data); err != nil {
 			log.Printf("Failed to save intermidiate data")
 		}
-	}
-
-	if !ok {
-		log.Printf("Failed to upload images")
-
-		return fmt.Errorf("Not all images uploaded")
 	}
 
 	html := helpers.CreateDomFromImages(imglist)
@@ -90,45 +91,66 @@ func (app *App) loadIntermidiateImageData() (map[string]string, error) {
 }
 
 func (app *App) addCaption(intermidData map[string]string, images map[string]string, imglist []string) ([]string, error) {
-	if app.Cfg.CaptionImgPath == "" {
+	if len(app.Cfg.CaptionImgPath) == 0 {
 		return imglist, nil
 	}
 
-	var err error
+	captions := make([]string, 0, len(app.Cfg.CaptionImgPath))
 
-	path, ok := intermidData[app.Cfg.CaptionImgPath]
-	if !ok {
-		path, err = postImage(app.Cfg.CaptionImgPath)
+	for _, path := range app.Cfg.CaptionImgPath {
+		url, err := addImage(path, intermidData, images)
 		if err != nil {
 			return nil, err
 		}
 
-		images[app.Cfg.CaptionImgPath] = path
+		captions = append(captions, url)
 	}
 
-	imglist = append(imglist, path)
+	imglist = append(imglist, captions...)
 
 	return imglist, nil
 }
 
 func (app *App) addTitleImage(intermidData map[string]string, images map[string]string, imglist []string) ([]string, error) {
-	if app.Cfg.TitleImgPath == "" {
+	if len(app.Cfg.TitleImgPath) == 0 {
 		return imglist, nil
 	}
 
-	var err error
+	titles := make([]string, 0, len(app.Cfg.TitleImgPath))
 
-	path, ok := intermidData[app.Cfg.TitleImgPath]
-	if !ok {
-		path, err = postImage(app.Cfg.TitleImgPath)
+	for _, path := range app.Cfg.TitleImgPath {
+		url, err := addImage(path, intermidData, images)
 		if err != nil {
 			return nil, err
 		}
 
-		images[app.Cfg.TitleImgPath] = path
+		titles = append(titles, url)
 	}
 
-	imglist = append([]string{path}, imglist...)
+	imglist = append(titles, imglist...)
 
 	return imglist, nil
+}
+
+func addImage(path string, inData map[string]string, outData map[string]string) (string, error) {
+	var err error
+
+	url, ok := inData[path]
+	if ok {
+		return url, nil
+	}
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return "", fmt.Errorf("read image %s: %w", path, err)
+	}
+
+	url, err = postImage(filepath.Base(path), data)
+	if err != nil {
+		return "", err
+	}
+
+	outData[path] = url
+
+	return url, nil
 }

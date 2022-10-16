@@ -4,38 +4,37 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"os"
 
-	"github.com/kelseyhightower/envconfig"
 	"gopkg.in/yaml.v2"
 )
 
 type Config struct {
 	Logger           *log.Logger
-	AuthToken        string `envconfig:"auth_token"`
-	PathToImgFolder  string `envconfig:"img_folder"          required:"true"`
-	TitleImgPath     string `envconfig:"title_img_path"`
-	CaptionImgPath   string `envconfig:"caption_img_path"`
-	PathToOutputFile string `envconfig:"output"`
-	AutoOpen         bool   `envconfig:"auto_open"`
+	AuthToken        string   `yaml:"auth_token"`
+	PathToImgFolder  string   `yaml:"img_folder"          required:"true"`
+	TitleImgPath     []string `yaml:"title_img_path"`
+	CaptionImgPath   []string `yaml:"caption_img_path"`
+	PathToOutputFile string   `yaml:"output"`
+	AutoOpen         bool     `yaml:"auto_open"`
 
-	Title           string `envconfig:"title"               required:"true"`
-	AuthorName      string `envconfig:"author_name"         required:"true"`
-	AuthorShortName string `envconfig:"author_short_name"`
-	AuthorURL       string `envconfig:"author_url"`
+	Title           string `yaml:"title"               required:"true"`
+	AuthorName      string `yaml:"author_name"         required:"true"`
+	AuthorShortName string `yaml:"author_short_name"`
+	AuthorURL       string `yaml:"author_url"`
 
-	IntermidDataEnabled  bool   `envconfig:"intermid_data_enabled"`
-	IntermidDataSavePath string `envconfig:"intermid_data_save_path"`
-	IntermidDataLoadPath string `envconfig:"intermid_data_load_path"`
+	IntermidDataEnabled  bool   `yaml:"intermid_data_enabled"`
+	IntermidDataSavePath string `yaml:"intermid_data_save_path"`
+	IntermidDataLoadPath string `yaml:"intermid_data_load_path"`
 }
 
 func (c *Config) Parse(path string) error {
-	if err := yamlToEnv(path); err != nil {
-		return fmt.Errorf("config parse failed: %v", err)
+	data, err := ioutil.ReadFile(path)
+	if err != nil {
+		return fmt.Errorf("read failed: %v", err)
 	}
 
-	if err := envconfig.Process("", c); err != nil {
-		return fmt.Errorf("process env: %w", err)
+	if err := yaml.Unmarshal(data, c); err != nil {
+		return fmt.Errorf("parse version data: %w", err)
 	}
 
 	if !c.AutoOpen && c.PathToImgFolder == "" {
@@ -50,22 +49,20 @@ func (c *Config) Parse(path string) error {
 		c.IntermidDataSavePath = c.PathToOutputFile
 	}
 
-	return nil
+	return c.validate()
 }
 
-func yamlToEnv(path string) error {
-	data, err := ioutil.ReadFile(path)
-	if err != nil {
-		return fmt.Errorf("read failed: %v", err)
+func (c *Config) validate() error {
+	if c.PathToImgFolder == "" {
+		return fmt.Errorf("path_to_img_folder is required")
 	}
 
-	var vars map[string]interface{}
-	if err := yaml.Unmarshal(data, &vars); err != nil {
-		return fmt.Errorf("parse version data: %w", err)
+	if c.Title == "" {
+		return fmt.Errorf("title is required")
 	}
 
-	for key, value := range vars {
-		os.Setenv(key, fmt.Sprintf("%v", value))
+	if c.AuthorName == "" {
+		return fmt.Errorf("author_name is required")
 	}
 
 	return nil
