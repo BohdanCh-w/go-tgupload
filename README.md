@@ -5,7 +5,7 @@
 
 ## How to use
 - [download program](https://github.com/ZUMORl/GoTeleghraphUploader/releases) 
-- create or copy [config.yaml](https://github.com/ZUMORl/PsdCompiler/blob/master/config.yaml) file. Place them in same directory
+- create or copy [config.yaml](https://github.com//blob/master/config.yaml) file. Place them in same directory TODO: Fix url
 - fill config.yaml with [correct parameters](#configuration)
 - start program
 
@@ -24,28 +24,28 @@ auto_open: true
 
 author_name: "Author Name Full"
 author_short_name: "Short Author Name"
-author_url: "https_//t.me/autor_link"
+author_url: "https://t.me/autor_link"
 
 intermid_data_enabled: true
 intermid_data_save_path: "intermid_data.json"
 intermid_data_load_path: "intermid_data.json"
 ```
 
-| option | description | type | required |
-|---|---|---|---|
-| title | Title of the acticle | string | true |
-| img_folder | Path to folder with images | path | true |
-| title_img_path | Path to title image (placed as first) | path | false |
-| caption_img_path | Path to caption image (placed in the end) | path | false |
-| auth_token | Telegraph identification token. Instruction how to find it - [here](#accessing-telegraph-access-token). You won't be able to edit generated article if you don't set this field | string | false |
-| author_name | Full author name | string | true |
-| author_short_name | Short Author Name | string | false |
-| author_url | Link to follow on author click | url | false |
-| output | Path to file with resulting article url if needed | path | false |
-| auto_open | Set true if you want to automatically open the article in browser | bool | false |
-| intermid_data_enabled | Allows you to save uploaded images if some of them failed to load correctly (Don't use if you don't understand it's purpose) | bool | false |
-| intermid_data_save_path | Path to save itermidiate images data | path | false |
-| intermid_data_load_path | Path to load itermidiate images data if previous atempt failed | path | false |
+| option                  | description                                                                                                                                                                     | type   | required |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | -------- |
+| title                   | Title of the acticle                                                                                                                                                            | string | true     |
+| img_folder              | Path to folder with images                                                                                                                                                      | path   | true     |
+| title_img_path          | Path to title image (placed as first)                                                                                                                                           | path   | false    |
+| caption_img_path        | Path to caption image (placed in the end)                                                                                                                                       | path   | false    |
+| auth_token              | Telegraph identification token. Instruction how to find it - [here](#accessing-telegraph-access-token). You won't be able to edit generated article if you don't set this field | string | false    |
+| author_name             | Full author name                                                                                                                                                                | string | true     |
+| author_short_name       | Short Author Name                                                                                                                                                               | string | false    |
+| author_url              | Link to follow on author click                                                                                                                                                  | url    | false    |
+| output                  | Path to file with resulting article url if needed                                                                                                                               | path   | false    |
+| auto_open               | Set true if you want to automatically open the article in browser                                                                                                               | bool   | false    |
+| intermid_data_enabled   | Allows you to save uploaded images if some of them failed to load correctly (Don't use if you don't understand it's purpose)                                                    | bool   | false    |
+| intermid_data_save_path | Path to save itermidiate images data                                                                                                                                            | path   | false    |
+| intermid_data_load_path | Path to load itermidiate images data if previous atempt failed                                                                                                                  | path   | false    |
 
 ---
 
