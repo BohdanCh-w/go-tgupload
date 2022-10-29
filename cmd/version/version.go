@@ -6,7 +6,7 @@ import (
 
 	"github.com/urfave/cli/v2"
 
-	"github.com/zumorl/go-tgupload/internal/build"
+	"github.com/bohdanch-w/go-tgupload/internal/build"
 )
 
 const (

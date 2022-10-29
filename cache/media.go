@@ -8,8 +8,8 @@ import (
 	"os"
 	"sync"
 
-	"github.com/zumorl/go-tgupload/entities"
-	"github.com/zumorl/go-tgupload/services"
+	"github.com/bohdanch-w/go-tgupload/entities"
+	"github.com/bohdanch-w/go-tgupload/services"
 )
 
 var _ services.CDN = (*MediaCache)(nil)

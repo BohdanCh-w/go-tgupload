@@ -6,8 +6,8 @@ import (
 
 	"gitlab.com/toby3d/telegraph"
 
-	"github.com/zumorl/go-tgupload/entities"
-	"github.com/zumorl/go-tgupload/pkg/utils"
+	"github.com/bohdanch-w/go-tgupload/entities"
+	"github.com/bohdanch-w/go-tgupload/pkg/utils"
 )
 
 func (s *Server) CreatePage(ctx context.Context, page entities.Page) (string, error) {

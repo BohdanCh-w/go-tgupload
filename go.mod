@@ -1,4 +1,4 @@
-module github.com/zumorl/go-tgupload
+module github.com/bohdanch-w/go-tgupload
 
 go 1.19
 

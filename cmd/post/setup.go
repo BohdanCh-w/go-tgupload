@@ -7,11 +7,11 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"github.com/zumorl/go-tgupload/cache"
-	"github.com/zumorl/go-tgupload/config"
-	"github.com/zumorl/go-tgupload/entities"
-	"github.com/zumorl/go-tgupload/services"
-	"github.com/zumorl/go-tgupload/telegraph"
+	"github.com/bohdanch-w/go-tgupload/cache"
+	"github.com/bohdanch-w/go-tgupload/config"
+	"github.com/bohdanch-w/go-tgupload/entities"
+	"github.com/bohdanch-w/go-tgupload/services"
+	"github.com/bohdanch-w/go-tgupload/telegraph"
 )
 
 const (

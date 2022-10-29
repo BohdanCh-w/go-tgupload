@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/bohdanch-w/datatypes/hashset"
-	"github.com/zumorl/go-tgupload/entities"
+	"github.com/bohdanch-w/go-tgupload/entities"
 )
 
 func LoadMedia(path string) (entities.MediaFile, error) {

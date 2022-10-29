@@ -6,8 +6,8 @@ import (
 
 	"gitlab.com/toby3d/telegraph"
 
-	"github.com/zumorl/go-tgupload/entities"
-	"github.com/zumorl/go-tgupload/services"
+	"github.com/bohdanch-w/go-tgupload/entities"
+	"github.com/bohdanch-w/go-tgupload/services"
 )
 
 const (

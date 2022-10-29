@@ -9,7 +9,7 @@ import (
 	"mime/multipart"
 	"net/http"
 
-	"github.com/zumorl/go-tgupload/entities"
+	"github.com/bohdanch-w/go-tgupload/entities"
 )
 
 func (s *Server) Upload(ctx context.Context, media entities.MediaFile) (string, error) {

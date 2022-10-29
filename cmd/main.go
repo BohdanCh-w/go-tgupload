@@ -9,9 +9,9 @@ import (
 	"github.com/urfave/cli/v2"
 	"go.uber.org/zap"
 
-	postcmd "github.com/zumorl/go-tgupload/cmd/post"
-	versioncmd "github.com/zumorl/go-tgupload/cmd/version"
-	"github.com/zumorl/go-tgupload/helpers"
+	postcmd "github.com/bohdanch-w/go-tgupload/cmd/post"
+	versioncmd "github.com/bohdanch-w/go-tgupload/cmd/version"
+	"github.com/bohdanch-w/go-tgupload/helpers"
 )
 
 func application(logger *zap.Logger) *cli.App {

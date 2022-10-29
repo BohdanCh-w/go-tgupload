@@ -3,7 +3,7 @@ package services
 import (
 	"context"
 
-	"github.com/zumorl/go-tgupload/entities"
+	"github.com/bohdanch-w/go-tgupload/entities"
 )
 
 type TelegraphAPI interface {

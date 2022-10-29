@@ -14,11 +14,11 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/sync/semaphore"
 
-	"github.com/zumorl/go-tgupload/config"
-	"github.com/zumorl/go-tgupload/entities"
-	"github.com/zumorl/go-tgupload/pkg/utils"
-	"github.com/zumorl/go-tgupload/services"
-	"github.com/zumorl/go-tgupload/usecases"
+	"github.com/bohdanch-w/go-tgupload/config"
+	"github.com/bohdanch-w/go-tgupload/entities"
+	"github.com/bohdanch-w/go-tgupload/pkg/utils"
+	"github.com/bohdanch-w/go-tgupload/services"
+	"github.com/bohdanch-w/go-tgupload/usecases"
 )
 
 type poster struct {
