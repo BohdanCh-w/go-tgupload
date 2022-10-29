@@ -11,7 +11,7 @@ import (
 )
 
 func (s *Server) CreatePage(ctx context.Context, page entities.Page) (string, error) {
-	html := make([]telegraph.Node, len(page.Content))
+	html := make([]telegraph.Node, 0, len(page.Content))
 	for _, div := range page.Content {
 		html = append(html, div)
 	}

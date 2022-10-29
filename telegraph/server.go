@@ -35,7 +35,7 @@ func (s *Server) Login(ctx context.Context, acc entities.Account) error {
 		ShortName:   acc.AuthorShortName,
 	})
 	if err != nil {
-		return fmt.Errorf("Failed to create telegraph account")
+		return fmt.Errorf("create telegraph account: %w", err)
 	}
 
 	if len(acc.AccessToken) != 0 {

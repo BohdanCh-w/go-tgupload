@@ -2,7 +2,7 @@ package cache
 
 import (
 	"context"
-	"crypto/md5"
+	"crypto/md5" // nolint: gosec
 	"encoding/json"
 	"fmt"
 	"os"
@@ -13,8 +13,6 @@ import (
 )
 
 var _ services.CDN = (*MediaCache)(nil)
-
-type retrieveFunc func(context.Context, entities.MediaFile) (string, error)
 
 type MediaCache struct {
 	cache     map[string]cachedMedia
@@ -41,14 +39,14 @@ func (c *MediaCache) LoadFile(path string) error {
 	}
 
 	if err := json.Unmarshal(data, &c.cache); err != nil {
-		return fmt.Errorf("unmarshal cached data")
+		return fmt.Errorf("unmarshal cached data: %w", err)
 	}
 
 	return nil
 }
 
 func (c *MediaCache) Upload(ctx context.Context, media entities.MediaFile) (string, error) {
-	hash := md5.Sum(media.Data)
+	hash := md5.Sum(media.Data) // nolint: gosec
 
 	if url, ok := c.getHash(hash); ok {
 		return url, nil
@@ -59,7 +57,7 @@ func (c *MediaCache) Upload(ctx context.Context, media entities.MediaFile) (stri
 		c.setHash(hash, media.Path, url)
 	}
 
-	return url, err
+	return url, err // nolint: wrapcheck
 }
 
 func (c *MediaCache) getHash(hash [16]byte) (string, bool) {
@@ -87,7 +85,7 @@ func (c *MediaCache) SaveFile(path string) error {
 		return fmt.Errorf("marshal data: %w", err)
 	}
 
-	if err := os.WriteFile(path, data, 0o666); err != nil {
+	if err := os.WriteFile(path, data, 0o666); err != nil { // nolint: gosec
 		return fmt.Errorf("write file: %w", err)
 	}
 

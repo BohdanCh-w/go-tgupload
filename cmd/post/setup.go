@@ -58,6 +58,7 @@ func (cmd postCmd) run(ctx *cli.Context) error {
 	)
 
 	cdn = tg
+
 	if cmd.cache != "" {
 		c := cache.New(tg)
 
@@ -65,7 +66,7 @@ func (cmd postCmd) run(ctx *cli.Context) error {
 			return fmt.Errorf("load cache: %w", err)
 		}
 
-		defer c.SaveFile(cmd.cache)
+		defer func() { _ = c.SaveFile(cmd.cache) }()
 
 		cdn = c
 	}

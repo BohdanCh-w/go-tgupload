@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 
+	"github.com/bohdanch-w/go-tgupload/entities"
 	"gopkg.in/yaml.v2"
 )
 
@@ -26,7 +27,7 @@ type Config struct {
 func (c *Config) Parse(path string) error {
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
-		return fmt.Errorf("read failed: %v", err)
+		return fmt.Errorf("read failed: %w", err)
 	}
 
 	if err := yaml.Unmarshal(data, c); err != nil {
@@ -45,6 +46,10 @@ func (c *Config) Parse(path string) error {
 }
 
 func (c *Config) validate() error {
+	const (
+		errMissingPathToImgFolder = entities.Error("path_to_img_folder is required")
+	)
+
 	if c.PathToImgFolder == "" {
 		return fmt.Errorf("path_to_img_folder is required")
 	}

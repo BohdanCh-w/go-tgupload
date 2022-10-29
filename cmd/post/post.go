@@ -43,6 +43,7 @@ func (p *poster) post(ctx context.Context, cfg config.Config) error {
 	}
 
 	page := generatePage(cfg.Title, cfg.AuthorName, cfg.AuthorURL, urls)
+
 	pageURL, err := p.tgAPI.CreatePage(ctx, page)
 	if err != nil {
 		return fmt.Errorf("create page: %w", err)
@@ -116,7 +117,7 @@ func generateOutput(url, outputPath string, autoOpen bool) error {
 	}
 
 	if len(outputPath) != 0 {
-		if err := os.WriteFile(outputPath, []byte(url), 0o666); err != nil {
+		if err := os.WriteFile(outputPath, []byte(url), 0o666); err != nil { // nolint: gosec, gomnd
 			return fmt.Errorf("write file: %w", err)
 		}
 	}
