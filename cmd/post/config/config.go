@@ -11,20 +11,16 @@ import (
 type Config struct {
 	Logger           *log.Logger
 	AuthToken        string   `yaml:"auth_token"`
-	PathToImgFolder  string   `yaml:"img_folder"          required:"true"`
+	PathToImgFolder  string   `yaml:"img_folder"`
 	TitleImgPath     []string `yaml:"title_img_path"`
 	CaptionImgPath   []string `yaml:"caption_img_path"`
 	PathToOutputFile string   `yaml:"output"`
 	AutoOpen         bool     `yaml:"auto_open"`
 
-	Title           string `yaml:"title"               required:"true"`
-	AuthorName      string `yaml:"author_name"         required:"true"`
+	Title           string `yaml:"title"`
+	AuthorName      string `yaml:"author_name"`
 	AuthorShortName string `yaml:"author_short_name"`
 	AuthorURL       string `yaml:"author_url"`
-
-	IntermidDataEnabled  bool   `yaml:"intermid_data_enabled"`
-	IntermidDataSavePath string `yaml:"intermid_data_save_path"`
-	IntermidDataLoadPath string `yaml:"intermid_data_load_path"`
 }
 
 func (c *Config) Parse(path string) error {
@@ -43,10 +39,6 @@ func (c *Config) Parse(path string) error {
 
 	if c.AuthorShortName == "" {
 		c.AuthorShortName = c.AuthorName
-	}
-
-	if c.IntermidDataEnabled && c.IntermidDataSavePath == "" {
-		c.IntermidDataSavePath = c.PathToOutputFile
 	}
 
 	return c.validate()

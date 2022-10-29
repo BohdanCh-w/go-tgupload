@@ -6,15 +6,11 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"sort"
-	"sync"
 
-	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/browser"
 	"go.uber.org/zap"
-	"golang.org/x/sync/semaphore"
 
-	"github.com/bohdanch-w/go-tgupload/config"
+	"github.com/bohdanch-w/go-tgupload/cmd/post/config"
 	"github.com/bohdanch-w/go-tgupload/entities"
 	"github.com/bohdanch-w/go-tgupload/pkg/utils"
 	"github.com/bohdanch-w/go-tgupload/services"
@@ -36,9 +32,14 @@ func (p *poster) post(ctx context.Context, cfg config.Config) error {
 		return fmt.Errorf("list images: %w", err)
 	}
 
-	urls, err := uploadImages(pCtx, p.cdn, images)
+	images, err = usecases.UploadFilesToCDN(pCtx, p.cdn, images)
 	if err != nil {
 		return fmt.Errorf("upload images: %w", err)
+	}
+
+	urls := make([]string, 0, len(images))
+	for _, img := range images {
+		urls = append(urls, img.URL)
 	}
 
 	page := generatePage(cfg.Title, cfg.AuthorName, cfg.AuthorURL, urls)
@@ -48,86 +49,6 @@ func (p *poster) post(ctx context.Context, cfg config.Config) error {
 	}
 
 	return generateOutput(pageURL, cfg.PathToOutputFile, cfg.AutoOpen)
-}
-
-func uploadImages(ctx context.Context, cdn services.CDN, imgFiles []entities.MediaFile) ([]string, error) {
-	var (
-		sem          = semaphore.NewWeighted(1)
-		uploaded     = make([]entities.MediaFile, 0, len(imgFiles))
-		uploadedURLs = make([]string, 0, len(imgFiles))
-		resChan      = make(chan uploadResult)
-		wg           sync.WaitGroup
-		done         = make(chan struct{})
-		mErr         multierror.Error
-	)
-
-	go func() { // collector
-		defer close(done)
-
-		for res := range resChan {
-			uploaded = append(uploaded, res.img)
-			multierror.Append(&mErr, res.err)
-		}
-	}()
-
-	for i := range imgFiles { // producer
-		if err := sem.Acquire(ctx, 1); err != nil {
-			break
-		}
-
-		wg.Add(1)
-
-		idx := i
-
-		go func() {
-			defer wg.Done()
-			defer sem.Release(1)
-
-			res := uploadResult{
-				img: imgFiles[idx],
-			}
-
-			defer func() {
-				resChan <- res
-			}()
-
-			url, err := cdn.Upload(ctx, imgFiles[idx])
-			if err != nil {
-				res.err = fmt.Errorf("post image %s: %w", imgFiles[idx].Name, err)
-			}
-
-			res.img.URL = url
-		}()
-	}
-
-	if mErr.ErrorOrNil() != nil {
-		return nil, fmt.Errorf("upload images: %w", &mErr)
-	}
-
-	orderMediaToOriginal(uploaded, imgFiles)
-
-	for _, img := range uploaded {
-		uploadedURLs = append(uploadedURLs, img.Name)
-	}
-
-	return uploadedURLs, nil
-}
-
-// orders files according to the original order. Comparing by name
-func orderMediaToOriginal(files, original []entities.MediaFile) {
-	order := make(map[string]int, len(original))
-	for i, val := range original {
-		order[val.Name] = i
-	}
-
-	sort.Slice(files, func(i, j int) bool {
-		return order[files[i].Name] < order[files[j].Name]
-	})
-}
-
-type uploadResult struct {
-	img entities.MediaFile
-	err error
 }
 
 func listImages(dir string, titles, captions []string) ([]entities.MediaFile, error) {

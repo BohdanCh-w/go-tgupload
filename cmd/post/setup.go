@@ -8,7 +8,7 @@ import (
 	"go.uber.org/zap/zapcore"
 
 	"github.com/bohdanch-w/go-tgupload/cache"
-	"github.com/bohdanch-w/go-tgupload/config"
+	"github.com/bohdanch-w/go-tgupload/cmd/post/config"
 	"github.com/bohdanch-w/go-tgupload/entities"
 	"github.com/bohdanch-w/go-tgupload/services"
 	"github.com/bohdanch-w/go-tgupload/telegraph"
