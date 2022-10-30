@@ -5,8 +5,9 @@ import (
 	"log"
 	"os"
 
-	"github.com/bohdanch-w/go-tgupload/entities"
 	"gopkg.in/yaml.v2"
+
+	"github.com/bohdanch-w/go-tgupload/entities"
 )
 
 type Config struct {

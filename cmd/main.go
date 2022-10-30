@@ -46,7 +46,7 @@ func _main() int {
 	defer func() { _ = mainLogger.Sync() }()
 
 	if err := application(mainLogger).RunContext(ctx, os.Args); err != nil {
-		mainLogger.Error("command failed", zap.Error(err))
+		mainLogger.Warn("command failed", zap.Error(err))
 
 		return 1
 	}
