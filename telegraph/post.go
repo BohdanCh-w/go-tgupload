@@ -10,10 +10,29 @@ import (
 	"github.com/bohdanch-w/go-tgupload/pkg/utils"
 )
 
+func toNode(div entities.Node) telegraph.Node {
+	children := make([]telegraph.Node, 0, len(div.Children))
+	for _, c := range div.Children {
+		if v, ok := c.(entities.Node); ok {
+			children = append(children, toNode(v))
+
+			continue
+		}
+
+		children = append(children, c)
+	}
+
+	return telegraph.NodeElement{
+		Tag:      div.Tag,
+		Attrs:    div.Attrs,
+		Children: []telegraph.Node(children),
+	}
+}
+
 func (s *Server) CreatePage(ctx context.Context, page entities.Page) (string, error) {
-	html := make([]telegraph.Node, len(page.Content))
+	html := make([]telegraph.Node, 0, len(page.Content))
 	for _, div := range page.Content {
-		html = append(html, div)
+		html = append(html, toNode(div))
 	}
 
 	p, err := s.account.CreatePage(telegraph.Page{

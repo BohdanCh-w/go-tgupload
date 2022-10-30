@@ -37,7 +37,7 @@ func (p *uploader) upload(ctx context.Context, cfg config) error {
 }
 
 func loadFiles(pathes []string) ([]entities.MediaFile, error) {
-	files := make([]entities.MediaFile, len(pathes))
+	files := make([]entities.MediaFile, 0, len(pathes))
 
 	for _, file := range pathes {
 		file, err := usecases.LoadMedia(file)
@@ -76,7 +76,7 @@ func generateOutput(files []entities.MediaFile, path string, plain bool) error {
 			URL  string `json:"url"`
 		}
 
-		data := make([]outFormat, len(files))
+		data := make([]outFormat, 0, len(files))
 
 		for _, file := range files {
 			data = append(data, outFormat{

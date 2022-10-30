@@ -1,7 +1,6 @@
 package post
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/urfave/cli/v2"
@@ -67,7 +66,8 @@ func (cmd uploadCMD) run(ctx *cli.Context) error {
 		if err := c.LoadFile(cmd.cache); err != nil {
 			return fmt.Errorf("load cache: %w", err)
 		}
-		defer c.SaveFile(cmd.cache)
+
+		defer func() { _ = c.SaveFile(cmd.cache) }()
 
 		cdn = c
 	}
@@ -108,7 +108,7 @@ func (cfg *config) parse(ctx *cli.Context) error {
 	cfg.plainOutput = ctx.Bool(plainFlag)
 
 	if len(cfg.files) == 0 {
-		return errors.New("no files specified")
+		return entities.Error("no files specified")
 	}
 
 	return nil

@@ -11,12 +11,14 @@ import (
 	"golang.org/x/sync/semaphore"
 )
 
-func UploadFilesToCDN(ctx context.Context, cdn services.CDN, mediaFiles []entities.MediaFile) ([]entities.MediaFile, error) {
+func UploadFilesToCDN( // nolint: funlen
+	ctx context.Context, cdn services.CDN, mediaFiles []entities.MediaFile,
+) ([]entities.MediaFile, error) {
 	var (
-		sem  = semaphore.NewWeighted(1)
+		sem  = semaphore.NewWeighted(8)
 		wg   sync.WaitGroup
 		done = make(chan struct{})
-		mErr multierror.Error
+		mErr *multierror.Error
 
 		uploaded = make([]entities.MediaFile, len(mediaFiles))
 		order    = make(map[string]int, len(mediaFiles))
@@ -31,10 +33,13 @@ func UploadFilesToCDN(ctx context.Context, cdn services.CDN, mediaFiles []entiti
 		defer close(done)
 
 		for res := range resChan {
-			multierror.Append(&mErr, res.err)
 			if res.err != nil {
-				uploaded[order[res.media.Path]] = res.media
+				mErr = multierror.Append(mErr, res.err)
+
+				continue
 			}
+
+			uploaded[order[res.media.Path]] = res.media
 		}
 	}()
 
@@ -68,8 +73,12 @@ func UploadFilesToCDN(ctx context.Context, cdn services.CDN, mediaFiles []entiti
 		}()
 	}
 
+	wg.Wait()
+	close(resChan)
+	<-done
+
 	if mErr.ErrorOrNil() != nil {
-		return nil, fmt.Errorf("upload images: %w", &mErr)
+		return nil, fmt.Errorf("upload images: %w", mErr)
 	}
 
 	return uploaded, nil
