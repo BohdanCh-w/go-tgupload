@@ -57,6 +57,16 @@ func (cmd postCmd) run(ctx *cli.Context) error {
 		tg  = telegraph.New()
 	)
 
+	err := tg.Login(ctx.Context, entities.Account{
+		AuthorName:      cmd.cfg.AuthorName,
+		AuthorShortName: cmd.cfg.AuthorShortName,
+		AuthorURL:       cmd.cfg.AuthorURL,
+		AccessToken:     cmd.cfg.AuthToken,
+	})
+	if err != nil {
+		return fmt.Errorf("login: %w", err)
+	}
+
 	cdn = tg
 
 	if cmd.cache != "" {

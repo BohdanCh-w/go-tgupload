@@ -39,8 +39,19 @@ func (c *MediaCache) LoadFile(path string) error {
 		return fmt.Errorf("read file: %w", err)
 	}
 
-	if err := json.Unmarshal(data, &c.cache); err != nil {
+	var cache map[string]cachedMedia
+
+	if err := json.Unmarshal(data, &cache); err != nil {
 		return fmt.Errorf("unmarshal cached data: %w", err)
+	}
+
+	for key, value := range cache {
+		decoded, err := hex.DecodeString(key)
+		if err != nil {
+			return fmt.Errorf("decode key %s: %w", key, err)
+		}
+
+		c.cache[string(decoded)] = value
 	}
 
 	return nil

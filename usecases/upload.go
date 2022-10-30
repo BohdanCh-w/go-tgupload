@@ -15,7 +15,7 @@ func UploadFilesToCDN( // nolint: funlen
 	ctx context.Context, cdn services.CDN, mediaFiles []entities.MediaFile,
 ) ([]entities.MediaFile, error) {
 	var (
-		sem  = semaphore.NewWeighted(1)
+		sem  = semaphore.NewWeighted(8)
 		wg   sync.WaitGroup
 		done = make(chan struct{})
 		mErr *multierror.Error
@@ -72,6 +72,10 @@ func UploadFilesToCDN( // nolint: funlen
 			res.media.URL = url
 		}()
 	}
+
+	wg.Wait()
+	close(resChan)
+	<-done
 
 	if mErr.ErrorOrNil() != nil {
 		return nil, fmt.Errorf("upload images: %w", mErr)
