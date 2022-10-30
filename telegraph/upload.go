@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"mime/multipart"
 	"net/http"
 
@@ -40,7 +40,7 @@ func (s *Server) Upload(ctx context.Context, media entities.MediaFile) (string, 
 	}
 	defer response.Body.Close()
 
-	content, err := ioutil.ReadAll(response.Body)
+	content, err := io.ReadAll(response.Body)
 	if err != nil {
 		return "", fmt.Errorf("read response body: %w", err)
 	}

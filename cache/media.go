@@ -3,6 +3,7 @@ package cache
 import (
 	"context"
 	"crypto/md5" // nolint: gosec
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -80,7 +81,12 @@ func (c *MediaCache) setHash(hash [16]byte, path, url string) {
 }
 
 func (c *MediaCache) SaveFile(path string) error {
-	data, err := json.MarshalIndent(c.cache, "", "  ")
+	cache := make(map[string]cachedMedia)
+	for key, value := range c.cache {
+		cache[hex.EncodeToString([]byte(key))] = value
+	}
+
+	data, err := json.MarshalIndent(cache, "", "  ")
 	if err != nil {
 		return fmt.Errorf("marshal data: %w", err)
 	}

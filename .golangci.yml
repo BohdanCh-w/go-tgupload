@@ -11,6 +11,10 @@ linters-settings:
       - web.Respond
       - web.NewError
       - fmt.Errorf
+  gomnd:
+    settings:
+      mnd:
+        ignored-functions: os.*
   nolintlint:
     allow-leading-space: true
   dupl:
@@ -34,7 +38,6 @@ linters:
   # generics:
     - rowserrcheck
     - sqlclosecheck
-    - structcheck
     - wastedassign
 
     - gci

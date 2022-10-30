@@ -3,7 +3,6 @@ package post
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -53,7 +52,7 @@ func (p *poster) post(ctx context.Context, cfg config.Config) error {
 }
 
 func listImages(dir string, titles, captions []string) ([]entities.MediaFile, error) {
-	imageFiles, err := ioutil.ReadDir(dir)
+	imageFiles, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, fmt.Errorf("read img directory: %w", err)
 	}
@@ -117,7 +116,7 @@ func generateOutput(url, outputPath string, autoOpen bool) error {
 	}
 
 	if len(outputPath) != 0 {
-		if err := os.WriteFile(outputPath, []byte(url), 0o666); err != nil { // nolint: gosec, gomnd
+		if err := os.WriteFile(outputPath, []byte(url), 0o666); err != nil { // nolint: gosec
 			return fmt.Errorf("write file: %w", err)
 		}
 	}

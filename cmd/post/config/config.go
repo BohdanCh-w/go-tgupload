@@ -2,8 +2,8 @@ package config
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
+	"os"
 
 	"github.com/bohdanch-w/go-tgupload/entities"
 	"gopkg.in/yaml.v2"
@@ -25,7 +25,7 @@ type Config struct {
 }
 
 func (c *Config) Parse(path string) error {
-	data, err := ioutil.ReadFile(path)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return fmt.Errorf("read failed: %w", err)
 	}
@@ -48,18 +48,20 @@ func (c *Config) Parse(path string) error {
 func (c *Config) validate() error {
 	const (
 		errMissingPathToImgFolder = entities.Error("path_to_img_folder is required")
+		errMissingTitle           = entities.Error("title is required")
+		errMissingAuthorName      = entities.Error("author_name is required")
 	)
 
 	if c.PathToImgFolder == "" {
-		return fmt.Errorf("path_to_img_folder is required")
+		return errMissingPathToImgFolder
 	}
 
 	if c.Title == "" {
-		return fmt.Errorf("title is required")
+		return errMissingTitle
 	}
 
 	if c.AuthorName == "" {
-		return fmt.Errorf("author_name is required")
+		return errMissingAuthorName
 	}
 
 	return nil
