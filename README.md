@@ -3,9 +3,18 @@
 
 ---
 
+## TODO / In Progress
+- cache test
+- error parse
+- logging
+- natural sort
+- window errors
+
+---
+
 ## How to use
 - [download program](https://github.com/ZUMORl/GoTeleghraphUploader/releases) 
-- create or copy [config.yaml](https://github.com//blob/master/config.yaml) file. Place them in same directory TODO: Fix url
+- create or copy [config.yaml](https://github.com/bohdanch-w/go-tgupload/blob/master/config.yaml) file. Place them in same directory
 - fill config.yaml with [correct parameters](#configuration)
 - start program
 
@@ -14,21 +23,34 @@
 ## Configuration
 program is configured via config.yaml which has such structure:
 ```
-title: "Article title here"
-img_folder: "path/to/img/folder"
-title_img_path: "path/to/title.png"
-caption_img_path: "path/to/caption.png"
-auth_token: "abcdefghijklmnopqrstuvwxyz123"
-output: "chapter_link.txt"
+title: 'Article title here'
+img_folder: 'path/to/img/folder'
+title_img_path: 
+  - 'path/to/title.png'
+caption_img_path: 
+  - 'path/to/caption.png'
+auth_token: 'abcdefghijklmnopqrstuvwxyz123'
+output: 'chapter_link.txt'
 auto_open: true
 
-author_name: "Author Name Full"
-author_short_name: "Short Author Name"
-author_url: "https://t.me/autor_link"
+author_name: 'Author Name Full'
+author_short_name: 'Short Author Name'
+author_url: 'https_//t.me/autor_link'
 
 intermid_data_enabled: true
-intermid_data_save_path: "intermid_data.json"
-intermid_data_load_path: "intermid_data.json"
+intermid_data_save_path: 'intermid_data.json'
+intermid_data_load_path: 'intermid_data.json'
+```
+
+### Minimal required config
+```
+title: 'Article title here'
+img_folder: 'path/to/img/folder'
+auto_open: true
+
+author_name: 'Author Name Full'
+author_short_name: 'Short Author Name'
+author_url: 'https_//t.me/autor_link'
 ```
 
 | option                  | description                                                                                                                                                                     | type   | required |
