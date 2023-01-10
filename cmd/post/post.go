@@ -17,7 +17,7 @@ import (
 )
 
 type poster struct {
-	logger *zap.Logger
+	logger *zap.SugaredLogger
 	cdn    services.CDN
 	tgAPI  services.TelegraphAPI
 }
@@ -31,7 +31,7 @@ func (p *poster) post(ctx context.Context, cfg config.Config) error {
 		return fmt.Errorf("list images: %w", err)
 	}
 
-	images, err = usecases.UploadFilesToCDN(pCtx, p.cdn, images)
+	images, err = usecases.UploadFilesToCDN(pCtx, p.logger, p.cdn, images)
 	if err != nil {
 		return fmt.Errorf("upload images: %w", err)
 	}

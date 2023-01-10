@@ -82,7 +82,7 @@ func (cmd postCmd) run(ctx *cli.Context) error {
 	}
 
 	up := poster{
-		logger: logger,
+		logger: logger.Sugar(),
 		cdn:    cdn,
 		tgAPI:  tg,
 	}

@@ -15,7 +15,7 @@ import (
 )
 
 type uploader struct {
-	logger *zap.Logger
+	logger *zap.SugaredLogger
 	cdn    services.CDN
 }
 
@@ -28,7 +28,7 @@ func (p *uploader) upload(ctx context.Context, cfg config) error {
 		return fmt.Errorf("load files: %w", err)
 	}
 
-	files, err = usecases.UploadFilesToCDN(pCtx, p.cdn, files)
+	files, err = usecases.UploadFilesToCDN(pCtx, p.logger, p.cdn, files)
 	if err != nil {
 		return fmt.Errorf("upload images: %w", err)
 	}

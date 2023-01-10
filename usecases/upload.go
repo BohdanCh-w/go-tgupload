@@ -8,11 +8,15 @@ import (
 	"github.com/bohdanch-w/go-tgupload/entities"
 	"github.com/bohdanch-w/go-tgupload/services"
 	"github.com/hashicorp/go-multierror"
+	"go.uber.org/zap"
 	"golang.org/x/sync/semaphore"
 )
 
 func UploadFilesToCDN( // nolint: funlen
-	ctx context.Context, cdn services.CDN, mediaFiles []entities.MediaFile,
+	ctx context.Context,
+	logger *zap.SugaredLogger,
+	cdn services.CDN,
+	mediaFiles []entities.MediaFile,
 ) ([]entities.MediaFile, error) {
 	var (
 		sem  = semaphore.NewWeighted(8)
@@ -55,6 +59,9 @@ func UploadFilesToCDN( // nolint: funlen
 		go func() {
 			defer wg.Done()
 			defer sem.Release(1)
+
+			logger.Infof("Start %s uploading", mediaFiles[idx].Name)
+			defer logger.Infof("uploading %s ended", mediaFiles[idx].Name)
 
 			res := uploadResult{
 				media: mediaFiles[idx],

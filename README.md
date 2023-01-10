@@ -6,7 +6,6 @@
 ## TODO / In Progress
 - cache test
 - error parse
-- logging
 - natural sort
 - window errors
 

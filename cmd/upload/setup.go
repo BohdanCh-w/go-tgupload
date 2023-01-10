@@ -73,7 +73,7 @@ func (cmd uploadCMD) run(ctx *cli.Context) error {
 	}
 
 	up := uploader{
-		logger: logger,
+		logger: logger.Sugar(),
 		cdn:    cdn,
 	}
 
