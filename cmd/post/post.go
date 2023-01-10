@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/pkg/browser"
 	"go.uber.org/zap"
 
 	"github.com/bohdanch-w/go-tgupload/cmd/post/config"
@@ -14,6 +13,8 @@ import (
 	"github.com/bohdanch-w/go-tgupload/pkg/utils"
 	"github.com/bohdanch-w/go-tgupload/services"
 	"github.com/bohdanch-w/go-tgupload/usecases"
+	"github.com/pkg/browser"
+	"github.com/sqweek/dialog"
 )
 
 type poster struct {
@@ -22,7 +23,7 @@ type poster struct {
 	tgAPI  services.TelegraphAPI
 }
 
-func (p *poster) post(ctx context.Context, cfg config.Config) error {
+func (p *poster) post(ctx context.Context, cfg config.Config, silent bool) error {
 	pCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -48,7 +49,11 @@ func (p *poster) post(ctx context.Context, cfg config.Config) error {
 		return fmt.Errorf("create page: %w", err)
 	}
 
-	return generateOutput(pageURL, cfg.PathToOutputFile, cfg.AutoOpen)
+	if err := generateOutput(pageURL, cfg.PathToOutputFile, cfg.AutoOpen, silent); err != nil {
+		return fmt.Errorf("generate output: %w", err)
+	}
+
+	return nil
 }
 
 func listImages(dir string, titles, captions []string) ([]entities.MediaFile, error) {
@@ -106,12 +111,24 @@ func generatePage(title, authorName, authorURL string, imgURLs []string) entitie
 	return res
 }
 
-func generateOutput(url, outputPath string, autoOpen bool) error {
+func generateOutput(url, outputPath string, autoOpen, silent bool) error {
 	_, _ = os.Stdout.WriteString(fmt.Sprintf("Article posted: %s", url))
 
-	if autoOpen {
-		if err := browser.OpenURL(url); err != nil {
-			return fmt.Errorf("open url: %w", err)
+	if silent {
+		if autoOpen {
+			if err := browser.OpenURL(url); err != nil {
+				return fmt.Errorf("open url: %w", err)
+			}
+		}
+	} else {
+		open := dialog.
+			Message("Article uploaded successfully\nWould you like to open it?").
+			Title("Success").YesNo()
+
+		if open {
+			if err := browser.OpenURL(url); err != nil {
+				return fmt.Errorf("open url: %w", err)
+			}
 		}
 	}
 

@@ -3,6 +3,7 @@ package post
 import (
 	"fmt"
 
+	"github.com/sqweek/dialog"
 	"github.com/urfave/cli/v2"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -18,6 +19,7 @@ const (
 	Name         = "run"
 	logLevelFlag = "loglevel"
 	cacheFlag    = "cache"
+	silentFlag   = "no-dialog"
 
 	ErrInvalidParams = entities.Error("invalid input params")
 )
@@ -32,6 +34,10 @@ func NewCMD(logger *zap.Logger) *cli.Command {
 			&cli.StringFlag{
 				Name: cacheFlag,
 			},
+			&cli.BoolFlag{
+				Name:    silentFlag,
+				Aliases: []string{"s"},
+			},
 		},
 		Action: postCmd{logger: logger}.run,
 	}
@@ -42,6 +48,8 @@ type postCmd struct {
 	cfg      config.Config
 	logLevel zapcore.Level
 	cache    string
+
+	silent bool
 }
 
 func (cmd postCmd) run(ctx *cli.Context) error {
@@ -87,7 +95,11 @@ func (cmd postCmd) run(ctx *cli.Context) error {
 		tgAPI:  tg,
 	}
 
-	if err := up.post(ctx.Context, cmd.cfg); err != nil {
+	if err := up.post(ctx.Context, cmd.cfg, cmd.silent); err != nil {
+		if !cmd.silent {
+			dialog.Message("Your article couldnt be posted due to following error:\n%s", err.Error()).Title("Error").Error()
+		}
+
 		return fmt.Errorf("post: %w", err)
 	}
 
@@ -111,6 +123,7 @@ func (cmd *postCmd) getConfig(ctx *cli.Context) error {
 
 	cmd.logLevel = logLevel
 	cmd.cache = ctx.String(cacheFlag)
+	cmd.silent = ctx.Bool(silentFlag)
 
 	return nil
 }

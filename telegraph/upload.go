@@ -54,10 +54,6 @@ func readResponse(content []byte) (string, error) {
 	}
 
 	if err := json.Unmarshal(content, &resp); err != nil {
-		return "", fmt.Errorf("parse response: %w", err)
-	}
-
-	if len(resp) != 1 || resp[0].Src == "" {
 		var errResp struct {
 			Err string `json:"error"`
 		}
@@ -67,6 +63,10 @@ func readResponse(content []byte) (string, error) {
 		}
 
 		return "", fmt.Errorf("error response: %w", entities.Error(errResp.Err))
+	}
+
+	if len(resp) != 1 || resp[0].Src == "" {
+		return "", fmt.Errorf("invalid response")
 	}
 
 	return resp[0].Src, nil
