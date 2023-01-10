@@ -20,7 +20,9 @@ var (
 )
 
 func New() *Server {
-	return &Server{}
+	return &Server{
+		account: &telegraph.Account{},
+	}
 }
 
 type Server struct {
@@ -28,18 +30,21 @@ type Server struct {
 }
 
 func (s *Server) Login(ctx context.Context, acc entities.Account) error {
-	tgAcc, err := telegraph.CreateAccount(telegraph.Account{
-		AccessToken: acc.AccessToken,
-		AuthorURL:   acc.AuthorURL,
-		AuthorName:  acc.AuthorName,
-		ShortName:   acc.AuthorShortName,
-	})
-	if err != nil {
-		return fmt.Errorf("create telegraph account: %w", err)
-	}
+	var (
+		tgAcc = &telegraph.Account{
+			AccessToken: acc.AccessToken,
+			AuthorURL:   acc.AuthorURL,
+			AuthorName:  acc.AuthorName,
+			ShortName:   acc.AuthorShortName,
+		}
+		err error
+	)
 
-	if len(acc.AccessToken) != 0 {
-		tgAcc.AccessToken = acc.AccessToken
+	if tgAcc.AccessToken == "" {
+		tgAcc, err = telegraph.CreateAccount(*tgAcc)
+		if err != nil {
+			return fmt.Errorf("create telegraph account: %w", err)
+		}
 	}
 
 	s.account = tgAcc

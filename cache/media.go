@@ -11,14 +11,17 @@ import (
 
 	"github.com/bohdanch-w/go-tgupload/entities"
 	"github.com/bohdanch-w/go-tgupload/services"
+	"go.uber.org/zap"
 )
 
 var _ services.CDN = (*MediaCache)(nil)
 
 type MediaCache struct {
-	cache     map[string]cachedMedia
 	retriever services.CDN
-	mux       sync.RWMutex
+	logger    *zap.Logger
+
+	cache map[string]cachedMedia
+	mux   sync.RWMutex
 }
 
 type cachedMedia struct {
@@ -26,9 +29,10 @@ type cachedMedia struct {
 	URL  string `json:"url"`
 }
 
-func New(retriever services.CDN) *MediaCache {
+func New(retriever services.CDN, logger *zap.Logger) *MediaCache {
 	return &MediaCache{
 		retriever: retriever,
+		logger:    logger,
 		cache:     make(map[string]cachedMedia),
 	}
 }
@@ -60,8 +64,12 @@ func (c *MediaCache) LoadFile(path string) error {
 func (c *MediaCache) Upload(ctx context.Context, media entities.MediaFile) (string, error) {
 	hash := md5.Sum(media.Data) // nolint: gosec
 
-	if url, ok := c.getHash(hash); ok {
-		return url, nil
+	if cached, ok := c.getHash(hash); ok {
+		if media.Path != cached.Path {
+			c.logger.Warn("equal hash for different pathes", zap.String("old", cached.Path), zap.String("new", media.Path))
+		}
+
+		return cached.URL, nil
 	}
 
 	url, err := c.retriever.Upload(ctx, media)
@@ -72,13 +80,13 @@ func (c *MediaCache) Upload(ctx context.Context, media entities.MediaFile) (stri
 	return url, err // nolint: wrapcheck
 }
 
-func (c *MediaCache) getHash(hash [16]byte) (string, bool) {
+func (c *MediaCache) getHash(hash [16]byte) (cachedMedia, bool) {
 	c.mux.RLock()
 	defer c.mux.RUnlock()
 
 	media, ok := c.cache[string(hash[:])]
 
-	return media.URL, ok
+	return media, ok
 }
 
 func (c *MediaCache) setHash(hash [16]byte, path, url string) {

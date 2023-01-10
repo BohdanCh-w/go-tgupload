@@ -61,7 +61,7 @@ func (cmd uploadCMD) run(ctx *cli.Context) error {
 
 	var cdn services.CDN = telegraph.New()
 	if cmd.cache != "" {
-		c := cache.New(cdn)
+		c := cache.New(cdn, logger)
 
 		if err := c.LoadFile(cmd.cache); err != nil {
 			return fmt.Errorf("load cache: %w", err)

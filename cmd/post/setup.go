@@ -70,7 +70,7 @@ func (cmd postCmd) run(ctx *cli.Context) error {
 	cdn = tg
 
 	if cmd.cache != "" {
-		c := cache.New(tg)
+		c := cache.New(tg, logger)
 
 		if err := c.LoadFile(cmd.cache); err != nil {
 			return fmt.Errorf("load cache: %w", err)
