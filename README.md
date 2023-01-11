@@ -3,12 +3,6 @@
 
 ---
 
-## TODO / In Progress
-- cache test
-- natural sort
-
----
-
 ## How to use
 - [download program](https://github.com/ZUMORl/GoTeleghraphUploader/releases) 
 - create or copy [config.yaml](https://github.com/bohdanch-w/go-tgupload/blob/master/config.yaml) file. Place them in same directory

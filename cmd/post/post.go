@@ -3,6 +3,7 @@ package post
 import (
 	"context"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 
@@ -61,6 +62,8 @@ func listImages(dir string, titles, captions []string) ([]entities.MediaFile, er
 	if err != nil {
 		return nil, fmt.Errorf("read img directory: %w", err)
 	}
+
+	utils.NaturalSort(imageFiles, func(e fs.DirEntry) string { return e.Name() })
 
 	pathes := make([]string, 0, len(titles)+len(imageFiles)+len(captions))
 	pathes = append(pathes, titles...)
