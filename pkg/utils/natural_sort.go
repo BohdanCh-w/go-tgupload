@@ -29,13 +29,14 @@ func (s sortedSlice[T]) Swap(a, b int) {
 	s.data[a], s.data[b] = s.data[b], s.data[a]
 }
 
-// NaturalSort sorts a list of strings in a natural order
+// NaturalSort sorts a list of strings in a natural order.
 func NaturalSort[T any](data []T, key func(T) string) {
 	sort.Sort(newSortedSlice(data, key))
 }
 
-// NaturalStringCompare returns true if the first string precedes the second one according to natural order
-func NaturalStringCompare(a, b string) bool {
+// NaturalStringCompare returns true if the first string precedes the second one according to natural order.
+// nolint: nestif, revive, wsl, gosimple, nlreturn, stylecheck
+func NaturalStringCompare(a, b string) bool { // nolint: funlen, gocognit, cyclop
 	ln_a := len(a)
 	ln_b := len(b)
 	posa := 0

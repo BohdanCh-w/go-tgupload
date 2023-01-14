@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var testList = []string{
+var testList = []string{ // nolint: gochecknoglobals
 	"1000X Radonius Maximus",
 	"000050X Radonius",
 	"10X Radonius",
@@ -85,9 +85,11 @@ func TestSortStrings1(t *testing.T) {
 		"Xiph Xlater 5000",
 		"Xiph Xlater 10000",
 	}
-	testListSorted := testList[:]
-	utils.NaturalSort(testListSorted, func(s string) string { return s })
 
+	testListSorted := make([]string, len(testList))
+	copy(testListSorted, testList)
+
+	utils.NaturalSort(testListSorted, func(s string) string { return s })
 	require.Equal(t, testListSortedOK, testListSorted)
 }
 
@@ -144,9 +146,10 @@ func TestSortStrings2(t *testing.T) {
 		"z102.doc",
 	}
 
-	testListSorted := testList[:]
-	utils.NaturalSort(testListSorted, func(s string) string { return s })
+	testListSorted := make([]string, len(testList))
+	copy(testListSorted, testList)
 
+	utils.NaturalSort(testListSorted, func(s string) string { return s })
 	require.Equal(t, testListSortedOK, testListSorted)
 }
 
@@ -207,10 +210,9 @@ func TestSortStructs(t *testing.T) {
 		{"z102.doc"},
 	}
 
-	testListSorted := testList[:]
-	utils.NaturalSort(testListSorted, func(s testStruct) string { return s.a })
+	utils.NaturalSort(testList, func(s testStruct) string { return s.a })
 
-	require.Equal(t, testListSortedOK, testListSorted)
+	require.Equal(t, testListSortedOK, testList)
 }
 
 func BenchmarkSort1(b *testing.B) {

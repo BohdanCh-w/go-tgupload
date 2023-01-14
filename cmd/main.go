@@ -10,18 +10,20 @@ import (
 	"go.uber.org/zap"
 
 	postcmd "github.com/bohdanch-w/go-tgupload/cmd/post"
+	uploadcmd "github.com/bohdanch-w/go-tgupload/cmd/upload"
 	versioncmd "github.com/bohdanch-w/go-tgupload/cmd/version"
 	"github.com/bohdanch-w/go-tgupload/helpers"
 )
 
 func application(logger *zap.Logger) *cli.App {
 	return &cli.App{
-		Name:  "uploader",
+		Name:  "tg-upload",
 		Usage: "cli tool to automate uploading to telegra.ph",
 		Flags: []cli.Flag{},
 		Commands: []*cli.Command{
 			versioncmd.Version(),
 			postcmd.NewCMD(logger),
+			uploadcmd.NewCMD(logger),
 		},
 	}
 }

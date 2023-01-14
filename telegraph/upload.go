@@ -8,6 +8,7 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"strings"
 
 	"github.com/bohdanch-w/go-tgupload/entities"
 )
@@ -45,10 +46,12 @@ func (s *Server) Upload(ctx context.Context, media entities.MediaFile) (string, 
 		return "", fmt.Errorf("read response body: %w", err)
 	}
 
-	return readResponse(content)
+	return parseResponse(content)
 }
 
-func readResponse(content []byte) (string, error) {
+func parseResponse(content []byte) (string, error) {
+	const errInvalidResponse = entities.Error("invalid response")
+
 	var resp []struct {
 		Src string `json:"src"`
 	}
@@ -65,9 +68,13 @@ func readResponse(content []byte) (string, error) {
 		return "", fmt.Errorf("error response: %w", entities.Error(errResp.Err))
 	}
 
-	if len(resp) != 1 || resp[0].Src == "" {
-		return "", fmt.Errorf("invalid response")
+	if len(resp) != 1 {
+		return "", fmt.Errorf("%w: length is %d, expected 1", errInvalidResponse, len(resp))
 	}
 
-	return resp[0].Src, nil
+	if resp[0].Src == "" {
+		return "", fmt.Errorf("%w: src is empty", errInvalidResponse)
+	}
+
+	return strings.TrimSuffix(TelegraphRootAddress, "/") + resp[0].Src, nil
 }

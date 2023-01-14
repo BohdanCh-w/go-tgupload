@@ -11,7 +11,8 @@ import (
 )
 
 const (
-	telegraphUploadAPI = "https://telegra.ph/upload"
+	TelegraphRootAddress = "https://telegra.ph/"
+	telegraphUploadAPI   = TelegraphRootAddress + "upload"
 )
 
 var (

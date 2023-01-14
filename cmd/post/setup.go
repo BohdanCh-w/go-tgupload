@@ -26,16 +26,20 @@ const (
 
 func NewCMD(logger *zap.Logger) *cli.Command {
 	return &cli.Command{
-		Name: Name,
+		Name:  Name,
+		Usage: "post telegraph article according to specified config",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name: logLevelFlag,
+				Name:  logLevelFlag,
+				Usage: "level of logging for application",
 			},
 			&cli.StringFlag{
-				Name: cacheFlag,
+				Name:  cacheFlag,
+				Usage: "path to saved cache. If specified will use caching for CDN uploads",
 			},
 			&cli.BoolFlag{
 				Name:    silentFlag,
+				Usage:   "don't prompt window for user input",
 				Aliases: []string{"s"},
 			},
 		},
@@ -61,8 +65,8 @@ func (cmd postCmd) run(ctx *cli.Context) error {
 	defer func() { _ = logger.Sync() }()
 
 	var (
-		cdn services.CDN
-		tg  = telegraph.New()
+		tg               = telegraph.New()
+		cdn services.CDN = tg
 	)
 
 	err := tg.Login(ctx.Context, entities.Account{
@@ -74,8 +78,6 @@ func (cmd postCmd) run(ctx *cli.Context) error {
 	if err != nil {
 		return fmt.Errorf("login: %w", err)
 	}
-
-	cdn = tg
 
 	if cmd.cache != "" {
 		c := cache.New(tg, logger)

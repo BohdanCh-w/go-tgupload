@@ -1,4 +1,4 @@
-package post
+package upload
 
 import (
 	"context"
@@ -19,11 +19,11 @@ type uploader struct {
 	cdn    services.CDN
 }
 
-func (p *uploader) upload(ctx context.Context, cfg config) error {
+func (p *uploader) upload(ctx context.Context, filePathes []string, output string, plainOutput bool) error {
 	pCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	files, err := loadFiles(cfg.files)
+	files, err := loadFiles(filePathes)
 	if err != nil {
 		return fmt.Errorf("load files: %w", err)
 	}
@@ -33,7 +33,7 @@ func (p *uploader) upload(ctx context.Context, cfg config) error {
 		return fmt.Errorf("upload images: %w", err)
 	}
 
-	return generateOutput(files, cfg.output, cfg.plainOutput)
+	return generateOutput(files, output, plainOutput)
 }
 
 func loadFiles(pathes []string) ([]entities.MediaFile, error) {
@@ -55,7 +55,7 @@ func generateOutput(files []entities.MediaFile, path string, plain bool) error {
 	var w io.Writer = os.Stdout
 
 	if len(path) != 0 {
-		f, err := os.OpenFile(path, os.O_WRONLY, 0o666)
+		f, err := os.OpenFile(path, os.O_WRONLY, 0o600)
 		if err != nil {
 			return fmt.Errorf("open output file: %w", err)
 		}

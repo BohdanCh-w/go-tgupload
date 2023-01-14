@@ -10,8 +10,9 @@ import (
 	"github.com/bohdanch-w/go-tgupload/pkg/utils"
 )
 
-func toNode(div entities.Node) telegraph.Node {
+func toNode(div entities.Node) telegraph.NodeElement {
 	children := make([]telegraph.Node, 0, len(div.Children))
+
 	for _, c := range div.Children {
 		if v, ok := c.(entities.Node); ok {
 			children = append(children, toNode(v))
@@ -25,7 +26,7 @@ func toNode(div entities.Node) telegraph.Node {
 	return telegraph.NodeElement{
 		Tag:      div.Tag,
 		Attrs:    div.Attrs,
-		Children: []telegraph.Node(children),
+		Children: children,
 	}
 }
 

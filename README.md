@@ -3,6 +3,9 @@
 
 ---
 
+## TODO
+- header and footer text
+
 ## How to use
 - [download program](https://github.com/ZUMORl/GoTeleghraphUploader/releases) 
 - create or copy [config.yaml](https://github.com/bohdanch-w/go-tgupload/blob/master/config.yaml) file. Place them in same directory
@@ -11,7 +14,7 @@
 
 ---
 
-## Configuration
+## Post Configuration
 program is configured via config.yaml which has such structure:
 ```
 title: 'Article title here'
@@ -26,11 +29,7 @@ auto_open: true
 
 author_name: 'Author Name Full'
 author_short_name: 'Short Author Name'
-author_url: 'https_//t.me/autor_link'
-
-intermid_data_enabled: true
-intermid_data_save_path: 'intermid_data.json'
-intermid_data_load_path: 'intermid_data.json'
+author_url: 'https://t.me/ZUMORl'
 ```
 
 ### Minimal required config
@@ -40,8 +39,7 @@ img_folder: 'path/to/img/folder'
 auto_open: true
 
 author_name: 'Author Name Full'
-author_short_name: 'Short Author Name'
-author_url: 'https_//t.me/autor_link'
+author_url: 'https://t.me/ZUMORl'
 ```
 
 | option                  | description                                                                                                                                                                     | type   | required |
@@ -64,7 +62,7 @@ author_url: 'https_//t.me/autor_link'
 
 ## Starting from sourse
 
-### Golang version 1.17 or higher
+### Golang version 1.19 or higher
 
 Download sourse folder
 Build with
@@ -79,6 +77,51 @@ GoTeleghraphUploader.exe -config path/to/config.yaml
 Or just with 
 ```
 go run main.go -config path/to/config.yaml
+```
+
+### Usage
+```
+tg-upload run config.yaml
+```
+
+Global commands:
+```
+NAME:
+   tg-upload - cli tool to automate uploading to telegra.ph
+
+USAGE:
+   tg-upload [global options] command [command options] [arguments...]
+
+COMMANDS:
+   version  
+   run      post telegraph article according to specified config
+   upload   upload file to telegraph CDN
+   help, h  Shows a list of commands or help for one command
+```
+
+Run usage (post article):
+```
+USAGE:
+   tg-upload run [command options] <path-to-config>
+
+OPTIONS:
+   --loglevel value  level of logging for application
+   --cache value     path to saved cache. If specified will use caching for CDN uploads
+   --no-dialog, -s   don't prompt window for user input (default: false)
+   --help, -h        show help (default: false)
+```
+
+Upload usage (post article):
+```
+USAGE:
+   tg-upload upload [command options] <file-path> [more-files...]
+
+OPTIONS:
+   --loglevel value  level of logging for application
+   --cache value     path to saved cache. If specified will use caching for CDN uploads
+   --output value    path to saved output file
+   --plain           use plain output format (default: false)
+   --help, -h        show help (default: false)
 ```
 
 ---

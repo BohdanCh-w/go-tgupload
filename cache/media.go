@@ -5,6 +5,7 @@ import (
 	"crypto/md5" // nolint: gosec
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"sync"
@@ -20,7 +21,7 @@ type MediaCache struct {
 	retriever services.CDN
 	logger    *zap.Logger
 
-	cache map[string]cachedMedia
+	cache map[[md5.Size]byte]cachedMedia
 	mux   sync.RWMutex
 }
 
@@ -33,13 +34,21 @@ func New(retriever services.CDN, logger *zap.Logger) *MediaCache {
 	return &MediaCache{
 		retriever: retriever,
 		logger:    logger,
-		cache:     make(map[string]cachedMedia),
+		cache:     make(map[[md5.Size]byte]cachedMedia),
 	}
 }
 
 func (c *MediaCache) LoadFile(path string) error {
+	const errCacheInvalid = entities.Error("invalid saved hash")
+
 	data, err := os.ReadFile(path)
 	if err != nil {
+		if errors.Is(os.ErrNotExist, err) {
+			c.cache = make(map[[md5.Size]byte]cachedMedia) // nullify cache
+
+			return nil
+		}
+
 		return fmt.Errorf("read file: %w", err)
 	}
 
@@ -55,7 +64,11 @@ func (c *MediaCache) LoadFile(path string) error {
 			return fmt.Errorf("decode key %s: %w", key, err)
 		}
 
-		c.cache[string(decoded)] = value
+		if length := len(decoded); length != md5.Size {
+			return fmt.Errorf("%w: hash size %d, expected %d", errCacheInvalid, length, md5.Size)
+		}
+
+		c.cache[*((*[md5.Size]byte)(decoded))] = value
 	}
 
 	return nil
@@ -84,7 +97,7 @@ func (c *MediaCache) getHash(hash [16]byte) (cachedMedia, bool) {
 	c.mux.RLock()
 	defer c.mux.RUnlock()
 
-	media, ok := c.cache[string(hash[:])]
+	media, ok := c.cache[hash]
 
 	return media, ok
 }
@@ -92,8 +105,7 @@ func (c *MediaCache) getHash(hash [16]byte) (cachedMedia, bool) {
 func (c *MediaCache) setHash(hash [16]byte, path, url string) {
 	c.mux.Lock()
 	defer c.mux.Unlock()
-
-	c.cache[string(hash[:])] = cachedMedia{
+	c.cache[hash] = cachedMedia{
 		Path: path,
 		URL:  url,
 	}
@@ -102,7 +114,7 @@ func (c *MediaCache) setHash(hash [16]byte, path, url string) {
 func (c *MediaCache) SaveFile(path string) error {
 	cache := make(map[string]cachedMedia)
 	for key, value := range c.cache {
-		cache[hex.EncodeToString([]byte(key))] = value
+		cache[hex.EncodeToString(key[:])] = value
 	}
 
 	data, err := json.MarshalIndent(cache, "", "  ")
@@ -110,7 +122,7 @@ func (c *MediaCache) SaveFile(path string) error {
 		return fmt.Errorf("marshal data: %w", err)
 	}
 
-	if err := os.WriteFile(path, data, 0o666); err != nil { // nolint: gosec
+	if err := os.WriteFile(path, data, 0o600); err != nil { // nolint: gosec
 		return fmt.Errorf("write file: %w", err)
 	}
 

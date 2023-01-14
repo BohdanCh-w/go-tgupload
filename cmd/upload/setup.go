@@ -1,4 +1,4 @@
-package post
+package upload
 
 import (
 	"fmt"
@@ -25,19 +25,24 @@ const (
 
 func NewCMD(logger *zap.Logger) *cli.Command {
 	return &cli.Command{
-		Name: Name,
+		Name:  Name,
+		Usage: "upload file to telegraph CDN",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name: logLevelFlag,
+				Name:  logLevelFlag,
+				Usage: "level of logging for application",
 			},
 			&cli.StringFlag{
-				Name: cacheFlag,
+				Name:  cacheFlag,
+				Usage: "path to saved cache. If specified will use caching for CDN uploads",
 			},
 			&cli.StringFlag{
-				Name: outputFlag,
+				Name:  outputFlag,
+				Usage: "path to saved output file",
 			},
 			&cli.BoolFlag{
-				Name: plainFlag,
+				Name:  plainFlag,
+				Usage: "use plain output format",
 			},
 		},
 		Action: uploadCMD{logger: logger}.run,
@@ -45,10 +50,13 @@ func NewCMD(logger *zap.Logger) *cli.Command {
 }
 
 type uploadCMD struct {
-	logger   *zap.Logger
-	logLevel zapcore.Level
-	cache    string
-	cfg      config
+	logger *zap.Logger
+
+	logLevel    zapcore.Level
+	cache       string
+	files       []string
+	output      string
+	plainOutput bool
 }
 
 func (cmd uploadCMD) run(ctx *cli.Context) error {
@@ -77,7 +85,7 @@ func (cmd uploadCMD) run(ctx *cli.Context) error {
 		cdn:    cdn,
 	}
 
-	if err := up.upload(ctx.Context, cmd.cfg); err != nil {
+	if err := up.upload(ctx.Context, cmd.files, cmd.output, cmd.plainOutput); err != nil {
 		return fmt.Errorf("upload: %w", err)
 	}
 
@@ -85,6 +93,11 @@ func (cmd uploadCMD) run(ctx *cli.Context) error {
 }
 
 func (cmd *uploadCMD) getConfig(ctx *cli.Context) error {
+	cmd.files = ctx.Args().Slice()
+	if len(cmd.files) == 0 {
+		return entities.Error("no files specified")
+	}
+
 	logLevel, err := zapcore.ParseLevel(ctx.String(logLevelFlag))
 	if err != nil {
 		return fmt.Errorf("parse loglevel: %w", err)
@@ -92,24 +105,8 @@ func (cmd *uploadCMD) getConfig(ctx *cli.Context) error {
 
 	cmd.logLevel = logLevel
 	cmd.cache = ctx.String(cacheFlag)
-
-	return cmd.cfg.parse(ctx)
-}
-
-type config struct {
-	files       []string
-	output      string
-	plainOutput bool
-}
-
-func (cfg *config) parse(ctx *cli.Context) error {
-	cfg.files = ctx.Args().Slice()
-	cfg.output = ctx.String(outputFlag)
-	cfg.plainOutput = ctx.Bool(plainFlag)
-
-	if len(cfg.files) == 0 {
-		return entities.Error("no files specified")
-	}
+	cmd.output = ctx.String(outputFlag)
+	cmd.plainOutput = ctx.Bool(plainFlag)
 
 	return nil
 }

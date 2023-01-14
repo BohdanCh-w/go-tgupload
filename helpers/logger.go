@@ -13,7 +13,6 @@ func syslogTimeEncoder(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
 }
 
 func MustLogger(opts ...zap.Option) *zap.Logger {
-	zap.NewProduction()
 	cfgConsole := zapcore.EncoderConfig{
 		LevelKey:         "level",
 		NameKey:          "logger",

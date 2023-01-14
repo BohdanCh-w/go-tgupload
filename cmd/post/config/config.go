@@ -11,13 +11,13 @@ import (
 )
 
 type Config struct {
-	Logger           *log.Logger
-	AuthToken        string   `yaml:"auth_token"`
-	PathToImgFolder  string   `yaml:"img_folder"`
-	TitleImgPath     []string `yaml:"title_img_path"`
-	CaptionImgPath   []string `yaml:"caption_img_path"`
-	PathToOutputFile string   `yaml:"output"`
-	AutoOpen         bool     `yaml:"auto_open"`
+	Logger            *log.Logger
+	AuthToken         string   `yaml:"auth_token"`
+	PathToImgFolder   string   `yaml:"img_folder"`
+	PathToTitleImgs   []string `yaml:"title_img_path"`
+	PathToCaptionImgs []string `yaml:"caption_img_path"`
+	PathToOutputFile  string   `yaml:"output"`
+	AutoOpen          bool     `yaml:"auto_open"`
 
 	Title           string `yaml:"title"`
 	AuthorName      string `yaml:"author_name"`

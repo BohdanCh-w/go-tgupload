@@ -28,7 +28,7 @@ func (p *poster) post(ctx context.Context, cfg config.Config, silent bool) error
 	pCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	images, err := listImages(cfg.PathToImgFolder, cfg.TitleImgPath, cfg.CaptionImgPath)
+	images, err := listImages(cfg.PathToImgFolder, cfg.PathToTitleImgs, cfg.PathToCaptionImgs)
 	if err != nil {
 		return fmt.Errorf("list images: %w", err)
 	}
@@ -82,7 +82,7 @@ func listImages(dir string, titles, captions []string) ([]entities.MediaFile, er
 
 	pathes = append(pathes, captions...)
 
-	images := make([]entities.MediaFile, 0, len(imageFiles))
+	images := make([]entities.MediaFile, 0, len(pathes))
 
 	for _, file := range pathes {
 		img, err := usecases.LoadMedia(file)
@@ -117,17 +117,14 @@ func generatePage(title, authorName, authorURL string, imgURLs []string) entitie
 func generateOutput(url, outputPath string, autoOpen, silent bool) error {
 	_, _ = os.Stdout.WriteString(fmt.Sprintf("Article posted: %s", url))
 
-	if silent {
-		if autoOpen {
-			if err := browser.OpenURL(url); err != nil {
-				return fmt.Errorf("open url: %w", err)
-			}
+	if silent && autoOpen { // nolint: nestif
+		if err := browser.OpenURL(url); err != nil {
+			return fmt.Errorf("open url: %w", err)
 		}
 	} else {
 		open := dialog.
 			Message("Article uploaded successfully\nWould you like to open it?").
 			Title("Success").YesNo()
-
 		if open {
 			if err := browser.OpenURL(url); err != nil {
 				return fmt.Errorf("open url: %w", err)
@@ -136,7 +133,7 @@ func generateOutput(url, outputPath string, autoOpen, silent bool) error {
 	}
 
 	if len(outputPath) != 0 {
-		if err := os.WriteFile(outputPath, []byte(url), 0o666); err != nil { // nolint: gosec
+		if err := os.WriteFile(outputPath, []byte(url), 0o600); err != nil { // nolint: gosec
 			return fmt.Errorf("write file: %w", err)
 		}
 	}

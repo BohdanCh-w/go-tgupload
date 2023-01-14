@@ -19,7 +19,7 @@ func UploadFilesToCDN( // nolint: funlen
 	mediaFiles []entities.MediaFile,
 ) ([]entities.MediaFile, error) {
 	var (
-		sem  = semaphore.NewWeighted(8)
+		sem  = semaphore.NewWeighted(8) // nolint: gomnd // TODO: make this configurable
 		wg   sync.WaitGroup
 		done = make(chan struct{})
 		mErr *multierror.Error
@@ -54,30 +54,16 @@ func UploadFilesToCDN( // nolint: funlen
 
 		wg.Add(1)
 
-		idx := i
-
-		go func() {
+		go func(idx int) {
 			defer wg.Done()
 			defer sem.Release(1)
 
-			logger.Infof("Start %s uploading", mediaFiles[idx].Name)
-			defer logger.Infof("uploading %s ended", mediaFiles[idx].Name)
-
-			res := uploadResult{
-				media: mediaFiles[idx],
+			res, err := UploadFileToCDN(ctx, logger, cdn, mediaFiles[idx])
+			resChan <- uploadResult{
+				media: res,
+				err:   err,
 			}
-
-			defer func() {
-				resChan <- res
-			}()
-
-			url, err := cdn.Upload(ctx, mediaFiles[idx])
-			if err != nil {
-				res.err = fmt.Errorf("post image %s: %w", mediaFiles[idx].Name, err)
-			}
-
-			res.media.URL = url
-		}()
+		}(i)
 	}
 
 	wg.Wait()
@@ -89,6 +75,25 @@ func UploadFilesToCDN( // nolint: funlen
 	}
 
 	return uploaded, nil
+}
+
+func UploadFileToCDN(
+	ctx context.Context,
+	logger *zap.SugaredLogger,
+	cdn services.CDN,
+	mediaFile entities.MediaFile,
+) (entities.MediaFile, error) {
+	logger.Infof("Start %s uploading", mediaFile.Name)
+	defer logger.Infof("uploading %s ended", mediaFile.Name)
+
+	url, err := cdn.Upload(ctx, mediaFile)
+	if err != nil {
+		return mediaFile, fmt.Errorf("post image %s: %w", mediaFile.Name, err)
+	}
+
+	mediaFile.URL = url
+
+	return mediaFile, nil
 }
 
 type uploadResult struct {
