@@ -7,9 +7,9 @@
 - header and footer text
 
 ## How to use
-- [download program](https://github.com/ZUMORl/GoTeleghraphUploader/releases) 
-- create or copy [config.yaml](https://github.com/bohdanch-w/go-tgupload/blob/master/config.yaml) file. Place them in same directory
-- fill config.yaml with [correct parameters](#configuration)
+- [download program](https://github.com/bohdanch-w/go-tgupload/releases)
+- create or copy [config.yaml](https://github.com/BohdanCh-w/go-tgupload/blob/master/specs/config.yaml) file. Place them in same directory
+- fill config.yaml with [correct parameters](#post-configuration)
 - start program
 
 ---
@@ -67,16 +67,11 @@ author_url: 'https://t.me/ZUMORl'
 Download sourse folder
 Build with
 ```
-go build .
+go build cmd/
 ```
-Has optional parameter ```config``` which sets path to configuration file
+OR
 ```
-GoTeleghraphUploader.exe -config path/to/config.yaml
-```
-
-Or just with 
-```
-go run main.go -config path/to/config.yaml
+make build
 ```
 
 ### Usage
