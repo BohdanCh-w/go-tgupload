@@ -157,7 +157,7 @@ func selectConfigFile(path string, silent bool) (string, error) {
 
 	startLocation, err := cwd()
 	if err != nil {
-		return "", fmt.Errorf("retrive cwd: %w", err)
+		return "", fmt.Errorf("retrieve cwd: %w", err)
 	}
 
 	choice, err := dialog.File().
@@ -174,7 +174,7 @@ func selectConfigFile(path string, silent bool) (string, error) {
 func cwd() (string, error) {
 	exe, err := os.Executable()
 	if err != nil {
-		return "", fmt.Errorf("get executable location")
+		return "", fmt.Errorf("get executable location: %w", err)
 	}
 
 	return filepath.Dir(exe), nil

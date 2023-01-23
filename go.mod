@@ -8,7 +8,7 @@ require (
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8
 	github.com/sqweek/dialog v0.0.0-20220809060634-e981b270ebbf
 	github.com/stretchr/testify v1.8.0
-	github.com/urfave/cli/v2 v2.20.2
+	github.com/urfave/cli/v2 v2.24.1
 	gitlab.com/toby3d/telegraph v1.2.1
 	go.uber.org/zap v1.23.0
 	golang.org/x/sync v0.0.0-20220929204114-8fcdb60fdcc0
