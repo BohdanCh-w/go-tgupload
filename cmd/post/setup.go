@@ -1,7 +1,10 @@
 package post
 
 import (
+	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/sqweek/dialog"
 	"github.com/urfave/cli/v2"
@@ -16,10 +19,12 @@ import (
 )
 
 const (
-	Name         = "run"
-	logLevelFlag = "loglevel"
-	cacheFlag    = "cache"
-	silentFlag   = "no-dialog"
+	Name              = "run"
+	logLevelFlag      = "loglevel"
+	logLevelDefault   = "INFO"
+	cacheFlag         = "cache"
+	silentFlag        = "no-dialog"
+	defaultConfigPath = "config.yaml"
 
 	ErrInvalidParams = entities.Error("invalid input params")
 )
@@ -109,9 +114,12 @@ func (cmd postCmd) run(ctx *cli.Context) error {
 }
 
 func (cmd *postCmd) getConfig(ctx *cli.Context) error {
-	path := ctx.Args().First()
-	if len(path) == 0 {
-		return fmt.Errorf("%w: config path is required", ErrInvalidParams)
+	cmd.cache = ctx.String(cacheFlag)
+	cmd.silent = ctx.Bool(silentFlag)
+
+	path, err := selectConfigFile(ctx.Args().First(), cmd.silent)
+	if err != nil {
+		return err
 	}
 
 	if err := cmd.cfg.Parse(path); err != nil {
@@ -124,8 +132,50 @@ func (cmd *postCmd) getConfig(ctx *cli.Context) error {
 	}
 
 	cmd.logLevel = logLevel
-	cmd.cache = ctx.String(cacheFlag)
-	cmd.silent = ctx.Bool(silentFlag)
 
 	return nil
+}
+
+func selectConfigFile(path string, silent bool) (string, error) {
+	const defaultLocation = "config.yaml"
+
+	if len(path) != 0 {
+		return path, nil
+	}
+
+	if _, err := os.Stat(defaultLocation); err != nil {
+		if !errors.Is(err, os.ErrNotExist) {
+			return "", fmt.Errorf("lookup %s: %w", defaultLocation, err)
+		}
+	} else {
+		return defaultLocation, nil
+	}
+
+	if silent {
+		return "", fmt.Errorf("%w: config path is required", ErrInvalidParams)
+	}
+
+	startLocation, err := cwd()
+	if err != nil {
+		return "", fmt.Errorf("retrive cwd: %w", err)
+	}
+
+	choice, err := dialog.File().
+		Filter("yaml", "yaml", "yml").
+		SetStartDir(startLocation).
+		Title("Select config").Load()
+	if err != nil {
+		return "", fmt.Errorf("user config select: %w", err)
+	}
+
+	return choice, nil
+}
+
+func cwd() (string, error) {
+	exe, err := os.Executable()
+	if err != nil {
+		return "", fmt.Errorf("get executable location")
+	}
+
+	return filepath.Dir(exe), nil
 }

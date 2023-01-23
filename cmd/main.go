@@ -25,6 +25,7 @@ func application(logger *zap.Logger) *cli.App {
 			postcmd.NewCMD(logger),
 			uploadcmd.NewCMD(logger),
 		},
+		DefaultCommand: postcmd.Name,
 	}
 }
 
