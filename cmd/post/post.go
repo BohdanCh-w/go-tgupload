@@ -7,19 +7,20 @@ import (
 	"os"
 	"path/filepath"
 
-	"go.uber.org/zap"
+	"github.com/pkg/browser"
+	"github.com/sqweek/dialog"
 
 	"github.com/bohdanch-w/go-tgupload/cmd/post/config"
 	"github.com/bohdanch-w/go-tgupload/entities"
 	"github.com/bohdanch-w/go-tgupload/pkg/utils"
 	"github.com/bohdanch-w/go-tgupload/services"
 	"github.com/bohdanch-w/go-tgupload/usecases"
-	"github.com/pkg/browser"
-	"github.com/sqweek/dialog"
+
+	whlogger "github.com/bohdanch-w/wheel/logger"
 )
 
 type poster struct {
-	logger *zap.SugaredLogger
+	logger whlogger.Logger
 	cdn    services.CDN
 	tgAPI  services.TelegraphAPI
 }
@@ -41,6 +42,25 @@ func (p *poster) post(ctx context.Context, cfg config.Config, silent bool) error
 	urls := make([]string, 0, len(images))
 	for _, img := range images {
 		urls = append(urls, img.URL)
+	}
+
+	urls := []string{
+		"https://vixen-verse.com/temp/bloom-covers/full.webp",
+
+		"https://vixen-verse.com/manga/270-koli-prijde-chas-ja-stanu-toboju-antologiya/3521-tom-1-rozdzil-8/pages/01.webp",
+		"https://vixen-verse.com/manga/270-koli-prijde-chas-ja-stanu-toboju-antologiya/3521-tom-1-rozdzil-8/pages/02.webp",
+		"https://vixen-verse.com/manga/270-koli-prijde-chas-ja-stanu-toboju-antologiya/3521-tom-1-rozdzil-8/pages/03.webp",
+		"https://vixen-verse.com/manga/270-koli-prijde-chas-ja-stanu-toboju-antologiya/3521-tom-1-rozdzil-8/pages/04.webp",
+		"https://vixen-verse.com/manga/270-koli-prijde-chas-ja-stanu-toboju-antologiya/3521-tom-1-rozdzil-8/pages/05.webp",
+		"https://vixen-verse.com/manga/270-koli-prijde-chas-ja-stanu-toboju-antologiya/3521-tom-1-rozdzil-8/pages/06.webp",
+		"https://vixen-verse.com/manga/270-koli-prijde-chas-ja-stanu-toboju-antologiya/3521-tom-1-rozdzil-8/pages/07.webp",
+		"https://vixen-verse.com/manga/270-koli-prijde-chas-ja-stanu-toboju-antologiya/3521-tom-1-rozdzil-8/pages/08.webp",
+		"https://vixen-verse.com/manga/270-koli-prijde-chas-ja-stanu-toboju-antologiya/3521-tom-1-rozdzil-8/pages/09.webp",
+		"https://vixen-verse.com/manga/270-koli-prijde-chas-ja-stanu-toboju-antologiya/3521-tom-1-rozdzil-8/pages/10.webp",
+		"https://vixen-verse.com/manga/270-koli-prijde-chas-ja-stanu-toboju-antologiya/3521-tom-1-rozdzil-8/pages/11.webp",
+
+		// "https://vixen-verse.com/temp/bloom-covers/101-kojiro.webp",
+		"https://vixen-verse.com/temp/bloom-covers/101-yu_kuss.webp",
 	}
 
 	page := generatePage(cfg.Title, cfg.AuthorName, cfg.AuthorURL, urls)

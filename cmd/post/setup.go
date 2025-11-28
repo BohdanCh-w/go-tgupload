@@ -8,14 +8,13 @@ import (
 
 	"github.com/sqweek/dialog"
 	"github.com/urfave/cli/v2"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 
 	"github.com/bohdanch-w/go-tgupload/cache"
 	"github.com/bohdanch-w/go-tgupload/cmd/post/config"
 	"github.com/bohdanch-w/go-tgupload/entities"
 	"github.com/bohdanch-w/go-tgupload/services"
 	"github.com/bohdanch-w/go-tgupload/telegraph"
+	whlogger "github.com/bohdanch-w/wheel/logger"
 )
 
 const (
@@ -29,7 +28,7 @@ const (
 	ErrInvalidParams = entities.Error("invalid input params")
 )
 
-func NewCMD(logger *zap.Logger) *cli.Command {
+func NewCMD(logger whlogger.Logger) *cli.Command {
 	return &cli.Command{
 		Name:  Name,
 		Usage: "post telegraph article according to specified config",
@@ -53,9 +52,9 @@ func NewCMD(logger *zap.Logger) *cli.Command {
 }
 
 type postCmd struct {
-	logger   *zap.Logger
+	logger   whlogger.Logger
 	cfg      config.Config
-	logLevel zapcore.Level
+	logLevel whlogger.LogLevel
 	cache    string
 
 	silent bool
@@ -66,8 +65,7 @@ func (cmd postCmd) run(ctx *cli.Context) error {
 		return fmt.Errorf("get config: %w", err)
 	}
 
-	logger := cmd.logger.WithOptions(zap.IncreaseLevel(cmd.logLevel))
-	defer func() { _ = logger.Sync() }()
+	logger := cmd.logger.WithLevel(cmd.logLevel)
 
 	var (
 		tg               = telegraph.New()
@@ -97,7 +95,7 @@ func (cmd postCmd) run(ctx *cli.Context) error {
 	}
 
 	up := poster{
-		logger: logger.Sugar(),
+		logger: logger,
 		cdn:    cdn,
 		tgAPI:  tg,
 	}
@@ -126,12 +124,10 @@ func (cmd *postCmd) getConfig(ctx *cli.Context) error {
 		return fmt.Errorf("parse config: %w", err)
 	}
 
-	logLevel, err := zapcore.ParseLevel(ctx.String(logLevelFlag))
-	if err != nil {
+	var logLevel whlogger.LogLevel
+	if err := logLevel.UnmarshalText([]byte(ctx.String(logLevelFlag))); err != nil {
 		return fmt.Errorf("parse loglevel: %w", err)
 	}
-
-	cmd.logLevel = logLevel
 
 	return nil
 }

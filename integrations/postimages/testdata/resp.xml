@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<data success="1" status="200">
+	<image>
+		<name>02</name>
+		<time>Mon, 10 Nov 2025 21:43:30 -0300</time>
+		<type>png</type>
+		<width>539</width>
+		<height>768</height>
+		<size>267874</size>
+	</image>
+	<links>
+		<page>https://postimg.cc/JyBgcMG4</page>
+		<edit>https://postimg.cc/JyBgcMG4/952e55ab</edit>
+		<delete>https://postimg.cc/delete/0h4sywYB/952e55ab</delete>
+		<thumbnail>https://i.postimg.cc/JyBgcMG4/02.png</thumbnail>
+		<hotlink>https://i.postimg.cc/KY92bYbL/02.png</hotlink>
+	</links>
+	<codes>
+		<thumbnail_forum>[url=https://postimg.cc/JyBgcMG4][img]https://i.postimg.cc/JyBgcMG4/02.png[/img][/url]</thumbnail_forum>
+		<thumbnail_html>&lt;a href=&#039;https://postimg.cc/JyBgcMG4&#039; target=&#039;_blank&#039;&gt;&lt;img src=&#039;https://i.postimg.cc/JyBgcMG4/02.png&#039; border=&#039;0&#039; alt=&#039;02&#039;&gt;&lt;/a&gt;</thumbnail_html>
+		<hotlink_forum>[url=https://postimages.org/][img]https://i.postimg.cc/KY92bYbL/02.png[/img][/url]</hotlink_forum>
+		<hotlink_html>&lt;a href=&#039;https://postimages.org/&#039; target=&#039;_blank&#039;&gt;&lt;img src=&#039;https://i.postimg.cc/KY92bYbL/02.png&#039; border=&#039;0&#039; alt=&#039;02&#039;&gt;</hotlink_html>
+	</codes>
+</data>

@@ -4,45 +4,56 @@ import (
 	"fmt"
 
 	"github.com/urfave/cli/v2"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 
-	"github.com/bohdanch-w/go-tgupload/cache"
+	wherr "github.com/bohdanch-w/wheel/errors"
+	whlogger "github.com/bohdanch-w/wheel/logger"
+
+	"github.com/bohdanch-w/go-tgupload/config"
 	"github.com/bohdanch-w/go-tgupload/entities"
+	"github.com/bohdanch-w/go-tgupload/integrations/postimages"
 	"github.com/bohdanch-w/go-tgupload/services"
-	"github.com/bohdanch-w/go-tgupload/telegraph"
 )
 
 const (
 	Name         = "upload"
 	logLevelFlag = "loglevel"
-	cacheFlag    = "cache"
 	outputFlag   = "output"
+	apiKeyFlag   = "apiKey"
 	plainFlag    = "plain"
+	parallelFlag = "parallel"
+
+	defaultParallel = 8
 
 	ErrInvalidParams = entities.Error("invalid input params")
 )
 
-func NewCMD(logger *zap.Logger) *cli.Command {
+func NewCMD(logger whlogger.Logger) *cli.Command {
 	return &cli.Command{
 		Name:  Name,
-		Usage: "upload file to telegraph CDN",
+		Usage: "upload file to CDN",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  logLevelFlag,
 				Usage: "level of logging for application",
 			},
 			&cli.StringFlag{
-				Name:  cacheFlag,
-				Usage: "path to saved cache. If specified will use caching for CDN uploads",
-			},
-			&cli.StringFlag{
 				Name:  outputFlag,
 				Usage: "path to saved output file",
 			},
+			&cli.StringFlag{
+				Name:  apiKeyFlag,
+				Usage: "postimage API key",
+			},
 			&cli.BoolFlag{
 				Name:  plainFlag,
+				Value: true,
 				Usage: "use plain output format",
+			},
+			&cli.UintFlag{
+				Name:    parallelFlag,
+				Aliases: []string{"-p"},
+				Value:   defaultParallel,
+				Usage:   "max parallel file uploads",
 			},
 		},
 		Action: uploadCMD{logger: logger}.run,
@@ -50,13 +61,14 @@ func NewCMD(logger *zap.Logger) *cli.Command {
 }
 
 type uploadCMD struct {
-	logger *zap.Logger
+	logger whlogger.Logger
 
-	logLevel    zapcore.Level
-	cache       string
+	logLevel    whlogger.LogLevel
 	files       []string
 	output      string
 	plainOutput bool
+	apiKey      string
+	parallel    uint
 }
 
 func (cmd uploadCMD) run(ctx *cli.Context) error {
@@ -64,25 +76,28 @@ func (cmd uploadCMD) run(ctx *cli.Context) error {
 		return fmt.Errorf("get config: %w", err)
 	}
 
-	logger := cmd.logger.WithOptions(zap.IncreaseLevel(cmd.logLevel))
-	defer func() { _ = logger.Sync() }()
+	logger := cmd.logger.WithLevel(cmd.logLevel)
 
-	var cdn services.CDN = telegraph.New()
-	if cmd.cache != "" {
-		c := cache.New(cdn, logger)
-
-		if err := c.LoadFile(cmd.cache); err != nil {
-			return fmt.Errorf("load cache: %w", err)
+	if cmd.apiKey == "" {
+		globalCfg, err := config.ReadConfig("")
+		if err != nil {
+			return fmt.Errorf("retrieve global config: %w", err)
 		}
 
-		defer func() { _ = c.SaveFile(cmd.cache) }()
+		key := globalCfg.Get(config.PostimgAPIKey)
+		if key == "" {
+			return wherr.Error("no api key provided")
+		}
 
-		cdn = c
+		cmd.apiKey = key
 	}
 
+	var cdn services.CDN = postimages.NewAPI(cmd.apiKey, "")
+
 	up := uploader{
-		logger: logger.Sugar(),
-		cdn:    cdn,
+		logger:   logger,
+		cdn:      cdn,
+		parallel: cmd.parallel,
 	}
 
 	if err := up.upload(ctx.Context, cmd.files, cmd.output, cmd.plainOutput); err != nil {
@@ -98,15 +113,16 @@ func (cmd *uploadCMD) getConfig(ctx *cli.Context) error {
 		return entities.Error("no files specified")
 	}
 
-	logLevel, err := zapcore.ParseLevel(ctx.String(logLevelFlag))
-	if err != nil {
+	var logLevel whlogger.LogLevel
+	if err := logLevel.UnmarshalText([]byte(ctx.String(logLevelFlag))); err != nil {
 		return fmt.Errorf("parse loglevel: %w", err)
 	}
 
 	cmd.logLevel = logLevel
-	cmd.cache = ctx.String(cacheFlag)
 	cmd.output = ctx.String(outputFlag)
 	cmd.plainOutput = ctx.Bool(plainFlag)
+	cmd.apiKey = ctx.String(apiKeyFlag)
+	cmd.parallel = ctx.Uint(parallelFlag)
 
 	return nil
 }

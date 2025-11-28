@@ -6,3 +6,7 @@ type Account struct {
 	AuthorURL       string
 	AccessToken     string
 }
+
+func (a *Account) Configured() bool {
+	return a.AuthorName != "" && a.AuthorShortName != "" && a.AuthorURL == ""
+}

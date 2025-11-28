@@ -7,16 +7,17 @@ import (
 	"io"
 	"os"
 
-	"go.uber.org/zap"
-
 	"github.com/bohdanch-w/go-tgupload/entities"
 	"github.com/bohdanch-w/go-tgupload/services"
 	"github.com/bohdanch-w/go-tgupload/usecases"
+
+	whlogger "github.com/bohdanch-w/wheel/logger"
 )
 
 type uploader struct {
-	logger *zap.SugaredLogger
-	cdn    services.CDN
+	logger   whlogger.Logger
+	cdn      services.CDN
+	parallel uint
 }
 
 func (p *uploader) upload(ctx context.Context, filePathes []string, output string, plainOutput bool) error {
@@ -28,7 +29,7 @@ func (p *uploader) upload(ctx context.Context, filePathes []string, output strin
 		return fmt.Errorf("load files: %w", err)
 	}
 
-	files, err = usecases.UploadFilesToCDN(pCtx, p.logger, p.cdn, files)
+	files, err = usecases.UploadFilesToCDN(pCtx, p.logger, p.cdn, p.parallel, files)
 	if err != nil {
 		return fmt.Errorf("upload images: %w", err)
 	}
@@ -55,7 +56,7 @@ func generateOutput(files []entities.MediaFile, path string, plain bool) error {
 	var w io.Writer = os.Stdout
 
 	if len(path) != 0 {
-		f, err := os.OpenFile(path, os.O_WRONLY, 0o600)
+		f, err := os.OpenFile(path, os.O_WRONLY, 0o600) // nolint: mnd
 		if err != nil {
 			return fmt.Errorf("open output file: %w", err)
 		}
