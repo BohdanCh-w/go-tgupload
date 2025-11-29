@@ -2,7 +2,9 @@ package postimages
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/xml"
 	"fmt"
 	"io"
@@ -12,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/bohdanch-w/go-tgupload/entities"
+	"github.com/bohdanch-w/go-tgupload/services"
 )
 
 const (
@@ -22,6 +25,8 @@ const (
 	version  = "1.0.1"
 	portable = "1"
 )
+
+var _ services.CDN = (*API)(nil)
 
 func NewAPI(apiKey string, gallery string) *API {
 	return &API{
@@ -38,17 +43,16 @@ type API struct {
 
 func (s *API) Upload(ctx context.Context, media entities.MediaFile) (string, error) {
 	var (
-		name      = filepath.Base(media.Name)
-		idx       = strings.LastIndexByte(name, '.')
-		nameNoExt = name
-		ext       string
-
 		form = make(url.Values)
+		ext  = strings.TrimPrefix(filepath.Ext(media.Name), ".")
+		hash = sha256.New()
 	)
 
-	if idx > 0 {
-		nameNoExt, ext = name[:idx], name[idx+1:]
+	if _, err := hash.Write(media.Data); err != nil {
+		return "", fmt.Errorf("generate file hash")
 	}
+
+	nameNoExt := hex.EncodeToString(hash.Sum(nil))[:32]
 
 	image := base64.StdEncoding.EncodeToString(media.Data)
 

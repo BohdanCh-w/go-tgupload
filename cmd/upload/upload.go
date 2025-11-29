@@ -37,7 +37,7 @@ func (p *uploader) upload(ctx context.Context, filePathes []string, output strin
 	return generateOutput(files, output, plainOutput)
 }
 
-func loadFiles(pathes []string) ([]entities.MediaFile, error) {
+func loadFiles(pathes []string) ([]entities.MediaFile, error) { // TODO: allow directories
 	files := make([]entities.MediaFile, 0, len(pathes))
 
 	for _, file := range pathes {

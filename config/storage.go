@@ -30,15 +30,6 @@ func WithConfigLocation(s string) ConfigOption {
 	}
 }
 
-func DefaultConfigLocation() (string, error) {
-	appData, ok := os.LookupEnv("APPDATA")
-	if !ok || appData == "" {
-		return "", wherr.Error("APPDATA env not set")
-	}
-
-	return filepath.Join(appData, "Zumori", "go-tg", "config.json"), nil
-}
-
 func ReadConfig(profile string, opts ...ConfigOption) (Config, error) {
 	options := configReadOptions{
 		locationRetriever: DefaultConfigLocation,
@@ -63,6 +54,7 @@ func readConfig(path, profile string) (Config, error) {
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return Config{
+				values:   make(map[string]string),
 				Location: path,
 				Profile:  defaultProfileName,
 			}, nil
@@ -139,7 +131,7 @@ func StoreConfig(cfg Config) error {
 			return err
 		}
 
-		if err := os.MkdirAll(filepath.Dir(cfg.Location), 0o600); err != nil { // nolint: mnd
+		if err := os.MkdirAll(filepath.Dir(cfg.Location), 0o777); err != nil { // nolint: mnd
 			return fmt.Errorf("create config directory: %w", err)
 		}
 	}

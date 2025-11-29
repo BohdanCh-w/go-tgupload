@@ -26,5 +26,5 @@ func LoadMedia(path string) (entities.MediaFile, error) {
 }
 
 func IsImage(path string) bool {
-	return hashset.New(".png", ".jpg", ".jpeg").Has(filepath.Ext(path))
+	return hashset.New(".png", ".jpg", ".jpeg", ".webp").Has(filepath.Ext(path))
 }

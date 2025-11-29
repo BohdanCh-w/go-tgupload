@@ -10,31 +10,34 @@ import (
 	"github.com/pkg/browser"
 	"github.com/sqweek/dialog"
 
-	"github.com/bohdanch-w/go-tgupload/cmd/post/config"
 	"github.com/bohdanch-w/go-tgupload/entities"
 	"github.com/bohdanch-w/go-tgupload/pkg/utils"
 	"github.com/bohdanch-w/go-tgupload/services"
 	"github.com/bohdanch-w/go-tgupload/usecases"
-
-	whlogger "github.com/bohdanch-w/wheel/logger"
 )
 
 type poster struct {
-	logger whlogger.Logger
-	cdn    services.CDN
-	tgAPI  services.TelegraphAPI
+	uploader *usecases.CDNUploader
+	tgAPI    services.TelegraphAPI
 }
 
-func (p *poster) post(ctx context.Context, cfg config.Config, silent bool) error {
+func (p *poster) post(ctx context.Context, dir, title string, noDialog, autoOpen bool) error {
 	pCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	images, err := listImages(cfg.PathToImgFolder, cfg.PathToTitleImgs, cfg.PathToCaptionImgs)
+	images, err := listImages(dir)
 	if err != nil {
 		return fmt.Errorf("list images: %w", err)
 	}
 
-	images, err = usecases.UploadFilesToCDN(pCtx, p.logger, p.cdn, images)
+	if title == "" {
+		title, err = utils.RepeatPrompt(ctx, "Enter title", "")
+		if err != nil {
+			return fmt.Errorf("prompt title: %w", err)
+		}
+	}
+
+	images, err = p.uploader.Upload(pCtx, images...)
 	if err != nil {
 		return fmt.Errorf("upload images: %w", err)
 	}
@@ -44,40 +47,21 @@ func (p *poster) post(ctx context.Context, cfg config.Config, silent bool) error
 		urls = append(urls, img.URL)
 	}
 
-	urls := []string{
-		"https://vixen-verse.com/temp/bloom-covers/full.webp",
-
-		"https://vixen-verse.com/manga/270-koli-prijde-chas-ja-stanu-toboju-antologiya/3521-tom-1-rozdzil-8/pages/01.webp",
-		"https://vixen-verse.com/manga/270-koli-prijde-chas-ja-stanu-toboju-antologiya/3521-tom-1-rozdzil-8/pages/02.webp",
-		"https://vixen-verse.com/manga/270-koli-prijde-chas-ja-stanu-toboju-antologiya/3521-tom-1-rozdzil-8/pages/03.webp",
-		"https://vixen-verse.com/manga/270-koli-prijde-chas-ja-stanu-toboju-antologiya/3521-tom-1-rozdzil-8/pages/04.webp",
-		"https://vixen-verse.com/manga/270-koli-prijde-chas-ja-stanu-toboju-antologiya/3521-tom-1-rozdzil-8/pages/05.webp",
-		"https://vixen-verse.com/manga/270-koli-prijde-chas-ja-stanu-toboju-antologiya/3521-tom-1-rozdzil-8/pages/06.webp",
-		"https://vixen-verse.com/manga/270-koli-prijde-chas-ja-stanu-toboju-antologiya/3521-tom-1-rozdzil-8/pages/07.webp",
-		"https://vixen-verse.com/manga/270-koli-prijde-chas-ja-stanu-toboju-antologiya/3521-tom-1-rozdzil-8/pages/08.webp",
-		"https://vixen-verse.com/manga/270-koli-prijde-chas-ja-stanu-toboju-antologiya/3521-tom-1-rozdzil-8/pages/09.webp",
-		"https://vixen-verse.com/manga/270-koli-prijde-chas-ja-stanu-toboju-antologiya/3521-tom-1-rozdzil-8/pages/10.webp",
-		"https://vixen-verse.com/manga/270-koli-prijde-chas-ja-stanu-toboju-antologiya/3521-tom-1-rozdzil-8/pages/11.webp",
-
-		// "https://vixen-verse.com/temp/bloom-covers/101-kojiro.webp",
-		"https://vixen-verse.com/temp/bloom-covers/101-yu_kuss.webp",
-	}
-
-	page := generatePage(cfg.Title, cfg.AuthorName, cfg.AuthorURL, urls)
+	page := generatePage(title, urls)
 
 	pageURL, err := p.tgAPI.CreatePage(ctx, page)
 	if err != nil {
 		return fmt.Errorf("create page: %w", err)
 	}
 
-	if err := generateOutput(pageURL, cfg.PathToOutputFile, cfg.AutoOpen, silent); err != nil {
+	if err := generateOutput(pageURL, autoOpen, noDialog); err != nil {
 		return fmt.Errorf("generate output: %w", err)
 	}
 
 	return nil
 }
 
-func listImages(dir string, titles, captions []string) ([]entities.MediaFile, error) {
+func listImages(dir string) ([]entities.MediaFile, error) {
 	imageFiles, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, fmt.Errorf("read img directory: %w", err)
@@ -85,8 +69,7 @@ func listImages(dir string, titles, captions []string) ([]entities.MediaFile, er
 
 	utils.NaturalSort(imageFiles, func(e fs.DirEntry) string { return e.Name() })
 
-	pathes := make([]string, 0, len(titles)+len(imageFiles)+len(captions))
-	pathes = append(pathes, titles...)
+	images := make([]entities.MediaFile, 0, len(imageFiles))
 
 	for _, file := range imageFiles {
 		if file.IsDir() {
@@ -97,14 +80,8 @@ func listImages(dir string, titles, captions []string) ([]entities.MediaFile, er
 			continue
 		}
 
-		pathes = append(pathes, filepath.Join(dir, file.Name()))
-	}
+		file := filepath.Join(dir, file.Name())
 
-	pathes = append(pathes, captions...)
-
-	images := make([]entities.MediaFile, 0, len(pathes))
-
-	for _, file := range pathes {
 		img, err := usecases.LoadMedia(file)
 		if err != nil {
 			return images, fmt.Errorf("load image: %w", err)
@@ -116,12 +93,10 @@ func listImages(dir string, titles, captions []string) ([]entities.MediaFile, er
 	return images, nil
 }
 
-func generatePage(title, authorName, authorURL string, imgURLs []string) entities.Page {
+func generatePage(title string, imgURLs []string) entities.Page {
 	res := entities.Page{
-		Title:      title,
-		AuthorName: utils.PtrOrNil(authorName),
-		AuthorURL:  utils.PtrOrNil(authorURL),
-		Content:    make([]entities.Node, 0, len(imgURLs)),
+		Title:   title,
+		Content: make([]entities.Node, 0, len(imgURLs)),
 	}
 
 	for _, url := range imgURLs {
@@ -134,27 +109,27 @@ func generatePage(title, authorName, authorURL string, imgURLs []string) entitie
 	return res
 }
 
-func generateOutput(url, outputPath string, autoOpen, silent bool) error {
-	_, _ = os.Stdout.WriteString(fmt.Sprintf("Article posted: %s", url))
+func generateOutput(url string, autoOpen, silent bool) error {
+	fmt.Fprintf(os.Stdout, "Article posted: %s", url)
 
-	if silent && autoOpen { // nolint: nestif
-		if err := browser.OpenURL(url); err != nil {
-			return fmt.Errorf("open url: %w", err)
-		}
+	if silent {
+		return nil
+	}
+
+	openBrowser := false
+	if autoOpen {
+		openBrowser = true
 	} else {
 		open := dialog.
 			Message("Article uploaded successfully\nWould you like to open it?").
 			Title("Success").YesNo()
-		if open {
-			if err := browser.OpenURL(url); err != nil {
-				return fmt.Errorf("open url: %w", err)
-			}
-		}
+
+		openBrowser = open
 	}
 
-	if len(outputPath) != 0 {
-		if err := os.WriteFile(outputPath, []byte(url), 0o600); err != nil { // nolint: gosec
-			return fmt.Errorf("write file: %w", err)
+	if openBrowser {
+		if err := browser.OpenURL(url); err != nil {
+			return fmt.Errorf("open url: %w", err)
 		}
 	}
 

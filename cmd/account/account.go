@@ -7,10 +7,12 @@ import (
 
 	"github.com/Songmu/prompter"
 	"github.com/manifoldco/promptui"
+	"github.com/pkg/browser"
 	"github.com/urfave/cli/v2"
 
 	"github.com/bohdanch-w/go-tgupload/config"
 	"github.com/bohdanch-w/go-tgupload/entities"
+	"github.com/bohdanch-w/go-tgupload/integrations/telegraph"
 	"github.com/bohdanch-w/go-tgupload/pkg/utils"
 	"github.com/bohdanch-w/wheel/ds/hashset"
 	wherr "github.com/bohdanch-w/wheel/errors"
@@ -26,16 +28,33 @@ func NewCMD() *cli.Command {
 		Usage: "manage account",
 		Subcommands: []*cli.Command{
 			{
-				Name:   "login",
-				Action: login,
-			},
-			{
 				Name:   "setup",
 				Action: setup,
 			},
 			{
+				Name:   "login",
+				Action: login,
+			},
+			{
+				Name: "web-login",
+				Flags: []cli.Flag{
+					&cli.BoolFlag{
+						Name: "text-only",
+					},
+				},
+				Action: webLogin,
+			},
+			{
 				Name:   "token",
 				Action: showToken,
+			},
+			{
+				Name:   "validate",
+				Action: validate,
+			},
+			{
+				Name:   "sync",
+				Action: sync,
 			},
 		},
 		Action: show,
@@ -54,30 +73,23 @@ func setup(ctx *cli.Context) error {
 	}
 
 	acc := cfg.Account()
-	if err := promtUserAccount(&acc); err != nil {
+	if err := promptUserAccount(&acc); err != nil {
 		return err
 	}
 
-	prompt := promptui.Prompt{
-		Label: fmt.Sprintf(
-			`Confirm changes to %q profile
+	confirmed := prompter.YN(fmt.Sprintf(
+		`Confirm changes to %q profile
  - Name:       %s
  - Short name: %s
- - Author URL: %s`,
-			cfg.Profile,
-			acc.AuthorName,
-			acc.AuthorShortName,
-			acc.AuthorURL,
-		),
-		IsConfirm: true,
-	}
+ - Author URL: %s
+ `,
+		cfg.Profile,
+		acc.AuthorName,
+		acc.AuthorShortName,
+		acc.AuthorURL,
+	), true)
 
-	confirmed, err := prompt.Run()
-	if err != nil {
-		return fmt.Errorf("get confirmation: %w", err)
-	}
-
-	if confirmed != "Y" {
+	if !confirmed {
 		return nil
 	}
 
@@ -103,50 +115,21 @@ func setUpSelectProfile(ctx *cli.Context) (string, error) {
 		return "", fmt.Errorf("find available profiles: %w", err)
 	}
 
-	profiles = append(profiles, "+ new")
-
-	// // profileListPrompt := promptui.Select{
-	// // 	Label: "Select profile",
-	// // 	Items: profiles,
-	// // }
-
-	// // idx, selectedProfile, err := profileListPrompt.Run()
-	// // if err != nil {
-	// // 	return "", fmt.Errorf("select profile: %w", err)
-	// // }
-
-	// if idx < len(profiles)-1 {
-	// 	return selectedProfile, nil
-	// }
+	profiles = append(profiles, "!new")
 
 	selectedProfile := prompter.Choose("Select profile", profiles, profiles[0])
-	if selectedProfile != "+ new" {
+	if selectedProfile != "!new" {
 		return selectedProfile, nil
 	}
 
-	// create new profile
-	// newProfilePrompt := promptui.Prompt{
-	// 	Label: "Name new profile",
-	// 	Validate: func(input string) error {
-	// 		if pfs.Has(input) {
-	// 			return wherr.Error("profile already exists")
-	// 		}
+	pfs := hashset.New(profiles...)
 
-	// 		return nil
-	// 	},
-	// }
-
-	// name, err := newProfilePrompt.Run()
-	// if err != nil {
-	// 	return "", fmt.Errorf("name new profile: %w", err)
-	// }
 	for {
 		name := prompter.Prompt("Profile ID", "")
 		if name == "" {
 			continue
 		}
 
-		pfs := hashset.New(profiles...)
 		if pfs.Has(name) {
 			return "", wherr.Error("profile already exists")
 		}
@@ -155,7 +138,7 @@ func setUpSelectProfile(ctx *cli.Context) (string, error) {
 	}
 }
 
-func promtUserAccount(acc *entities.Account) error {
+func promptUserAccount(acc *entities.Account) error {
 	fmt.Fprintln(os.Stdout, "Enter new configuration for the Account:")
 
 	for _, input := range []struct {
@@ -179,9 +162,16 @@ func promtUserAccount(acc *entities.Account) error {
 		},
 		{
 			prompt: promptui.Prompt{
-				Label:     "Short name (optional)",
+				Label:     "Short name",
 				Default:   acc.AuthorShortName,
 				AllowEdit: true,
+				Validate: func(s string) error {
+					if strings.TrimSpace(s) == "" {
+						return wherr.Error("name can't be empty")
+					}
+
+					return nil
+				},
 			},
 			destination: &acc.AuthorShortName,
 		},
@@ -242,7 +232,144 @@ func login(ctx *cli.Context) error {
 		return nil
 	}
 
-	_ = 0
+	token, err := telegraph.Login(ctx.Context, acc)
+	if err != nil {
+		return fmt.Errorf("failed to log in: %w", err)
+	}
+
+	acc.AccessToken = token
+
+	cfg.SetAccount(acc)
+
+	if err := config.StoreConfig(cfg); err != nil {
+		return fmt.Errorf("store config: %w", err)
+	}
+
+	return nil
+}
+
+func sync(ctx *cli.Context) error {
+	cfg, err := config.ReadConfig(ctx.String("profile"))
+	if err != nil {
+		return err
+	}
+
+	acc := cfg.Account()
+
+	if !cfg.Exists() {
+		return wherr.Error("Config not exists")
+	}
+
+	if acc.AccessToken == "" {
+		return wherr.Error("Token is not configured")
+	}
+
+	tg, err := telegraph.New(acc)
+	if err != nil {
+		return fmt.Errorf("init telegraph API: %w", err)
+	}
+
+	accInfo, err := tg.Account(
+		ctx.Context,
+		"author_name",
+		"short_name",
+		"author_url",
+		"page_count",
+	)
+	if err != nil {
+		return fmt.Errorf("get info: %w", err)
+	}
+
+	acc.AuthorName = accInfo.AuthorName
+	acc.AuthorShortName = accInfo.AuthorShortName
+	acc.AuthorURL = accInfo.AuthorURL
+
+	cfg.SetAccount(acc)
+
+	if err := config.StoreConfig(cfg); err != nil {
+		return fmt.Errorf("store config: %w", err)
+	}
+
+	fmt.Fprintln(os.Stdout, "Account is successfully synced.")
+
+	return nil
+}
+
+func webLogin(ctx *cli.Context) error {
+	cfg, err := config.ReadConfig(ctx.String("profile"))
+	if err != nil {
+		return err
+	}
+
+	acc := cfg.Account()
+
+	if !cfg.Exists() {
+		return wherr.Error("Account is not configured")
+	}
+
+	if acc.AccessToken == "" {
+		return wherr.Error("Token is not configured")
+	}
+
+	tg, err := telegraph.New(acc)
+	if err != nil {
+		return fmt.Errorf("init telegraph API: %w", err)
+	}
+
+	accInfo, err := tg.Account(
+		ctx.Context,
+		"auth_url",
+	)
+	if err != nil {
+		return fmt.Errorf("get info: %w", err)
+	}
+
+	fmt.Fprintln(os.Stdout, "Your login link:", accInfo.AuthURL)
+
+	if !ctx.Bool("text-only") {
+		browser.OpenURL(accInfo.AuthURL)
+	}
+
+	return nil
+}
+
+func validate(ctx *cli.Context) error {
+	cfg, err := config.ReadConfig(ctx.String("profile"))
+	if err != nil {
+		return err
+	}
+
+	acc := cfg.Account()
+
+	if !cfg.Exists() {
+		return wherr.Error("Account is not configured")
+	}
+
+	if acc.AccessToken == "" {
+		return wherr.Error("Token is not configured")
+	}
+
+	tg, err := telegraph.New(acc)
+	if err != nil {
+		return fmt.Errorf("init telegraph API: %w", err)
+	}
+
+	accInfo, err := tg.Account(
+		ctx.Context,
+		"author_name",
+		"short_name",
+		"author_url",
+		"page_count",
+	)
+	if err != nil {
+		return fmt.Errorf("get info: %w", err)
+	}
+
+	fmt.Fprintln(os.Stdout, "Account is successfully configured:")
+	fmt.Fprintf(os.Stdout, "\tName: %s\n", accInfo.AuthorName)
+	fmt.Fprintf(os.Stdout, "\tShort name: %s\n", accInfo.AuthorShortName)
+	fmt.Fprintf(os.Stdout, "\tAuthor URL: %s\n", accInfo.AuthorURL)
+	fmt.Fprintf(os.Stdout, "\tArticles published: %d\n", accInfo.PageCount)
 
 	return nil
 }

@@ -33,7 +33,7 @@ func application(logger whlogger.Logger) *cli.App {
 			postcmd.NewCMD(logger),
 			uploadcmd.NewCMD(logger),
 		},
-		DefaultCommand: postcmd.Name,
+		DefaultCommand: versioncmd.Name,
 	}
 }
 

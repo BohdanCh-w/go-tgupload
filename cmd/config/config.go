@@ -10,23 +10,28 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/bohdanch-w/go-tgupload/config"
+	"github.com/bohdanch-w/go-tgupload/pkg/utils"
 
+	"github.com/bohdanch-w/wheel/ds/hashset"
 	wherr "github.com/bohdanch-w/wheel/errors"
 )
 
 const (
 	Name = "config"
+
+	sensitiveFlag = "sensitive"
 )
 
 func NewCMD() *cli.Command {
 	return &cli.Command{
 		Name:  Name,
 		Usage: "manage config",
-		Subcommands: []*cli.Command{
-			{
-				Name:   "list",
-				Action: show,
+		Flags: []cli.Flag{
+			&cli.BoolFlag{
+				Name: sensitiveFlag,
 			},
+		},
+		Subcommands: []*cli.Command{
 			{
 				Name:   "set",
 				Action: set,
@@ -74,11 +79,23 @@ func show(ctx *cli.Context) error {
 		return nil
 	}
 
+	values := cfg.Values()
+
+	if !ctx.Bool(sensitiveFlag) {
+		sensitive := hashset.New(config.SensitiveKeys()...)
+
+		for k, v := range values {
+			if sensitive.Has(k) {
+				values[k] = utils.MaskString(v)
+			}
+		}
+	}
+
 	enc := json.NewEncoder(os.Stdout)
 	enc.SetIndent("", "  ")
 	enc.SetEscapeHTML(false)
 
-	if err := enc.Encode(cfg.Values()); err != nil {
+	if err := enc.Encode(values); err != nil {
 		return fmt.Errorf("failed to write config content: %w", err)
 	}
 

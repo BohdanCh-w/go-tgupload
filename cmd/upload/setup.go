@@ -51,7 +51,7 @@ func NewCMD(logger whlogger.Logger) *cli.Command {
 			},
 			&cli.UintFlag{
 				Name:    parallelFlag,
-				Aliases: []string{"-p"},
+				Aliases: []string{"p"},
 				Value:   defaultParallel,
 				Usage:   "max parallel file uploads",
 			},
