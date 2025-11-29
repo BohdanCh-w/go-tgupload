@@ -3,9 +3,6 @@ package usecases
 import (
 	"context"
 	"fmt"
-	"path/filepath"
-	"strconv"
-	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
@@ -126,10 +123,6 @@ func newS3CDN(ctx context.Context, cfg config.Config, opts CDNOptions) (*s3stora
 	}
 
 	client := s3.NewFromConfig(awsCfg, s3ClientOpts...)
-	location = filepath.Join(
-		collections.DefaultIfEmpty(location, "/"),
-		strconv.Itoa(int(time.Now().Unix())),
-	)
 
 	return s3storage.NewMediaStorage(client, bucket, location, publicURL), nil
 }

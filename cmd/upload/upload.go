@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 
 	"github.com/bohdanch-w/go-tgupload/entities"
 	"github.com/bohdanch-w/go-tgupload/services"
@@ -21,7 +22,7 @@ type uploader struct {
 }
 
 func (p *uploader) upload(ctx context.Context, filePathes []string, output string, plainOutput bool) error {
-	pCtx, cancel := context.WithCancel(ctx)
+	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	files, err := loadFiles(filePathes)
@@ -29,7 +30,9 @@ func (p *uploader) upload(ctx context.Context, filePathes []string, output strin
 		return fmt.Errorf("load files: %w", err)
 	}
 
-	files, err = usecases.UploadFilesToCDN(pCtx, p.logger, p.cdn, p.parallel, files)
+	uploader := usecases.NewCDNUploader(p.logger, p.cdn, p.parallel)
+
+	files, err = uploader.Upload(ctx, files...)
 	if err != nil {
 		return fmt.Errorf("upload images: %w", err)
 	}
@@ -37,13 +40,38 @@ func (p *uploader) upload(ctx context.Context, filePathes []string, output strin
 	return generateOutput(files, output, plainOutput)
 }
 
-func loadFiles(pathes []string) ([]entities.MediaFile, error) { // TODO: allow directories
+func loadFiles(pathes []string) ([]entities.MediaFile, error) {
+	queue := make([]string, len(pathes))
+	copy(queue, pathes)
+
 	files := make([]entities.MediaFile, 0, len(pathes))
 
-	for _, file := range pathes {
-		file, err := usecases.LoadMedia(file)
+	for i := 0; i < len(queue); i++ {
+		path := queue[i]
+
+		stat, err := os.Stat(path)
 		if err != nil {
-			return files, fmt.Errorf("load image: %w", err)
+			return files, fmt.Errorf("read location %q: %w", path, err)
+		}
+
+		if stat.IsDir() {
+			entries, err := os.ReadDir(path)
+			if err != nil {
+				return files, fmt.Errorf("list directory %q: %w", path, err)
+			}
+
+			for _, entry := range entries {
+				if !entry.IsDir() { // no recursion
+					queue = append(queue, filepath.Join(path, entry.Name()))
+				}
+			}
+
+			continue
+		}
+
+		file, err := usecases.LoadMedia(path)
+		if err != nil {
+			return files, fmt.Errorf("load file: %w", err)
 		}
 
 		files = append(files, file)

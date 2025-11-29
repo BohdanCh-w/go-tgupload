@@ -168,7 +168,9 @@ func (cmd postCmd) run(ctx *cli.Context) error {
 		return fmt.Errorf("get config: %w", err)
 	}
 
-	globalCfg, err := config.ReadConfig("")
+	logger := cmd.logger.WithLevel(cmd.logLevel)
+
+	globalCfg, err := config.ReadConfig(ctx.String("profile"))
 	if err != nil {
 		return fmt.Errorf("retrieve global config: %w", err)
 	}
@@ -177,8 +179,6 @@ func (cmd postCmd) run(ctx *cli.Context) error {
 	if !globalCfg.Exists() || !acc.Configured() || acc.AccessToken == "" {
 		return wherr.Error("account is not configured")
 	}
-
-	logger := cmd.logger.WithLevel(cmd.logLevel)
 
 	tg, err := telegraph.New(entities.Account{
 		AuthorName:      acc.AuthorName,

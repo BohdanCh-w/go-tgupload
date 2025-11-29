@@ -70,8 +70,8 @@ Configuration options are the following keys in config (set via `gotg config set
    - aws-region
    - aws-endpoint
    - aws-s3-bucket
-   - aws-s3-location: directory where files should be stored. The service will additionally create subfolders with current timestamp to avoid name collisions.
-   - aws-s3-public-url: Resulting url will be formed in format: [this public url]/[location]/[timestamp]/[filename].
+   - aws-s3-location: directory where files should be stored.
+   - aws-s3-public-url: Resulting url will be formed in format: [this public url]/[location]/[filename].
 The same configuration may be achieved via env values:
 ```
 AWS_KEY_ID
