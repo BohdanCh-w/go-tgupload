@@ -5,21 +5,63 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/hashicorp/go-multierror"
+	"golang.org/x/sync/semaphore"
+
 	"github.com/bohdanch-w/go-tgupload/entities"
 	"github.com/bohdanch-w/go-tgupload/services"
-	"github.com/hashicorp/go-multierror"
-	"go.uber.org/zap"
-	"golang.org/x/sync/semaphore"
+
+	"github.com/bohdanch-w/wheel/collections"
+	wherr "github.com/bohdanch-w/wheel/errors"
+	whlogger "github.com/bohdanch-w/wheel/logger"
 )
+
+const defaultCDNUploadParallel = 8
+
+func NewCDNUploader(logger whlogger.Logger, cdn services.CDN, parallel uint) *CDNUploader {
+	return &CDNUploader{
+		logger:   logger,
+		cdn:      cdn,
+		parallel: collections.DefaultIfEmpty(parallel, defaultCDNUploadParallel),
+	}
+}
+
+type CDNUploader struct {
+	logger   whlogger.Logger
+	cdn      services.CDN
+	parallel uint
+}
+
+func (u *CDNUploader) Upload(ctx context.Context, mediaFiles ...entities.MediaFile) ([]entities.MediaFile, error) {
+	if len(mediaFiles) == 0 {
+		return nil, nil
+	}
+
+	if len(mediaFiles) == 1 {
+		file, err := UploadFileToCDN(ctx, u.logger, u.cdn, mediaFiles[0])
+		if err != nil {
+			return nil, err
+		}
+
+		return []entities.MediaFile{file}, nil
+	}
+
+	return UploadFilesToCDN(ctx, u.logger, u.cdn, u.parallel, mediaFiles)
+}
 
 func UploadFilesToCDN( // nolint: funlen
 	ctx context.Context,
-	logger *zap.SugaredLogger,
+	logger whlogger.Logger,
 	cdn services.CDN,
+	parallel uint,
 	mediaFiles []entities.MediaFile,
 ) ([]entities.MediaFile, error) {
+	if parallel == 0 {
+		return nil, wherr.Error("invalid configuration")
+	}
+
 	var (
-		sem  = semaphore.NewWeighted(8) // nolint: gomnd // TODO: make this configurable
+		sem  = semaphore.NewWeighted(int64(parallel))
 		wg   sync.WaitGroup
 		done = make(chan struct{})
 		mErr *multierror.Error
@@ -79,12 +121,12 @@ func UploadFilesToCDN( // nolint: funlen
 
 func UploadFileToCDN(
 	ctx context.Context,
-	logger *zap.SugaredLogger,
+	logger whlogger.Logger,
 	cdn services.CDN,
 	mediaFile entities.MediaFile,
 ) (entities.MediaFile, error) {
-	logger.Infof("Start %s uploading", mediaFile.Name)
-	defer logger.Infof("uploading %s ended", mediaFile.Name)
+	logger.Debugf("Start %s uploading", mediaFile.Name)
+	defer logger.Debugf("uploading %s ended", mediaFile.Name)
 
 	url, err := cdn.Upload(ctx, mediaFile)
 	if err != nil {

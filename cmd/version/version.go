@@ -15,12 +15,19 @@ const (
 
 func Version() *cli.Command {
 	return &cli.Command{
-		Name: Name,
-		Action: func(_ *cli.Context) error {
-			os.Stdout.WriteString(fmt.Sprintf("tg-upload version:    %s\n", build.Version))
-			os.Stdout.WriteString(fmt.Sprintf("tg-upload build date: %s\n", build.Date))
+		Name:   Name,
+		Usage:  "get gotg basic info",
+		Action: version(),
+	}
+}
 
-			return nil
-		},
+func version() cli.ActionFunc {
+	return func(cCtx *cli.Context) error {
+		fmt.Fprintln(os.Stdout, "GoTg:")
+		fmt.Fprintf(os.Stdout, "  version: %s\n", build.Version)
+		fmt.Fprintf(os.Stdout, "  go:      %s\n", build.GoVersion)
+		fmt.Fprintf(os.Stdout, "  at:      %s\n", build.BuiltAt)
+
+		return nil
 	}
 }

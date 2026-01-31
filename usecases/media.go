@@ -5,8 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/bohdanch-w/datatypes/hashset"
 	"github.com/bohdanch-w/go-tgupload/entities"
+	"github.com/bohdanch-w/wheel/ds/hashset"
 )
 
 func LoadMedia(path string) (entities.MediaFile, error) {
@@ -26,5 +26,5 @@ func LoadMedia(path string) (entities.MediaFile, error) {
 }
 
 func IsImage(path string) bool {
-	return hashset.New(".png", ".jpg", ".jpeg").Has(filepath.Ext(path))
+	return hashset.New(".png", ".jpg", ".jpeg", ".webp").Has(filepath.Ext(path))
 }

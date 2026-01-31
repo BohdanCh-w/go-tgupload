@@ -12,14 +12,15 @@ import (
 
 	"github.com/bohdanch-w/go-tgupload/entities"
 	"github.com/bohdanch-w/go-tgupload/services"
-	"go.uber.org/zap"
+
+	whlogger "github.com/bohdanch-w/wheel/logger"
 )
 
 var _ services.CDN = (*MediaCache)(nil)
 
 type MediaCache struct {
 	retriever services.CDN
-	logger    *zap.Logger
+	logger    whlogger.Logger
 
 	cache map[[md5.Size]byte]cachedMedia
 	mux   sync.RWMutex
@@ -30,7 +31,7 @@ type cachedMedia struct {
 	URL  string `json:"url"`
 }
 
-func New(retriever services.CDN, logger *zap.Logger) *MediaCache {
+func New(retriever services.CDN, logger whlogger.Logger) *MediaCache {
 	return &MediaCache{
 		retriever: retriever,
 		logger:    logger,
@@ -79,7 +80,9 @@ func (c *MediaCache) Upload(ctx context.Context, media entities.MediaFile) (stri
 
 	if cached, ok := c.getHash(hash); ok {
 		if media.Path != cached.Path {
-			c.logger.Warn("equal hash for different pathes", zap.String("old", cached.Path), zap.String("new", media.Path))
+			c.logger.With("old", cached.Path).
+				With("new", media.Path).
+				Warnf("equal hash for different pathes")
 		}
 
 		return cached.URL, nil
@@ -122,7 +125,7 @@ func (c *MediaCache) SaveFile(path string) error {
 		return fmt.Errorf("marshal data: %w", err)
 	}
 
-	if err := os.WriteFile(path, data, 0o600); err != nil { // nolint: gosec
+	if err := os.WriteFile(path, data, 0o600); err != nil { // nolint: gosec,mnd
 		return fmt.Errorf("write file: %w", err)
 	}
 

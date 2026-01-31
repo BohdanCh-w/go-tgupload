@@ -7,7 +7,6 @@ import (
 	"gitlab.com/toby3d/telegraph"
 
 	"github.com/bohdanch-w/go-tgupload/entities"
-	"github.com/bohdanch-w/go-tgupload/pkg/utils"
 )
 
 func toNode(div entities.Node) telegraph.NodeElement {
@@ -30,16 +29,16 @@ func toNode(div entities.Node) telegraph.NodeElement {
 	}
 }
 
-func (s *Server) CreatePage(ctx context.Context, page entities.Page) (string, error) {
+func (a *API) CreatePage(ctx context.Context, page entities.Page) (string, error) {
 	html := make([]telegraph.Node, 0, len(page.Content))
 	for _, div := range page.Content {
 		html = append(html, toNode(div))
 	}
 
-	p, err := s.account.CreatePage(telegraph.Page{
+	p, err := a.account.CreatePage(telegraph.Page{
 		Title:       page.Title,
-		AuthorName:  utils.DefaultIfNil(page.AuthorName, s.account.AuthorName),
-		AuthorURL:   utils.DefaultIfNil(page.AuthorURL, s.account.AuthorURL),
+		AuthorName:  a.account.AuthorName,
+		AuthorURL:   a.account.AuthorURL,
 		Description: page.Description,
 		Content:     html,
 	}, true)

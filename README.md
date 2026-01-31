@@ -1,68 +1,119 @@
 # GoTeleghraphUploader
-### Golang tool for creating telegraph articles from image folders
+### Golang tool for creating telegraph articles as image galeries
 
 ---
-
-## TODO
-- header and footer text
 
 ## How to use
 - [download program](https://github.com/bohdanch-w/go-tgupload/releases)
-- create or copy [config.yaml](https://github.com/BohdanCh-w/go-tgupload/blob/master/specs/config.yaml) file. Place them in same directory
-- fill config.yaml with [correct parameters](#post-configuration)
-- start program
+- configure the program. See details in [configuration](#configuration)
+- run program with preferred parameters
 
 ---
 
-## Post Configuration
-program is configured via config.yaml which has such structure:
-```
-title: 'Article title here'
-img_folder: 'path/to/img/folder'
-title_img_path: 
-  - 'path/to/title.png'
-caption_img_path: 
-  - 'path/to/caption.png'
-auth_token: 'abcdefghijklmnopqrstuvwxyz123'
-output: 'chapter_link.txt'
-auto_open: true
+## Configuration
+Configuration is performed by subcommands `config` and `account`. Second is meant specifically for telegra.ph account configuration.
 
-author_name: 'Author Name Full'
-author_short_name: 'Short Author Name'
-author_url: 'https://t.me/ZUMORl'
+### 1.a If you don't have a telegra.ph account:
+Run this command and follow instructions to configure the basic information
 ```
-
-### Minimal required config
+> gotg account setup
 ```
-title: 'Article title here'
-img_folder: 'path/to/img/folder'
-auto_open: true
+Followed by:
+```
+> gotg account login
+```
+This will create a new telegra.ph account, which will be used for future posts. To use the same account via browser, additionally run `gotg account web-login`.
 
-author_name: 'Author Name Full'
-author_url: 'https://t.me/ZUMORl'
+To validate which account is used and get basic information, use this command:
+```
+gotg account validate
 ```
 
-| option                  | description                                                                                                                                                                     | type   | required |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | -------- |
-| title                   | Title of the acticle                                                                                                                                                            | string | true     |
-| img_folder              | Path to folder with images                                                                                                                                                      | path   | true     |
-| title_img_path          | Path to title image (placed as first)                                                                                                                                           | path   | false    |
-| caption_img_path        | Path to caption image (placed in the end)                                                                                                                                       | path   | false    |
-| auth_token              | Telegraph identification token. Instruction how to find it - [here](#accessing-telegraph-access-token). You won't be able to edit generated article if you don't set this field | string | false    |
-| author_name             | Full author name                                                                                                                                                                | string | true     |
-| author_short_name       | Short Author Name                                                                                                                                                               | string | false    |
-| author_url              | Link to follow on author click                                                                                                                                                  | url    | false    |
-| output                  | Path to file with resulting article url if needed                                                                                                                               | path   | false    |
-| auto_open               | Set true if you want to automatically open the article in browser                                                                                                               | bool   | false    |
-| intermid_data_enabled   | Allows you to save uploaded images if some of them failed to load correctly (Don't use if you don't understand it's purpose)                                                    | bool   | false    |
-| intermid_data_save_path | Path to save itermidiate images data                                                                                                                                            | path   | false    |
-| intermid_data_load_path | Path to load itermidiate images data if previous atempt failed                                                                                                                  | path   | false    |
+You can additionally check your token if needed by executing `gotg account token`
+
+### 1.b If you already have a telegra.ph account:
+- Open telegra.ph.
+- Make sure you are logged in.
+- Open developer tools in your browser (`F12`)
+- Go to network tab and reload the page
+- In the list of requests find the one with name `check`
+- In headers section under `Request Headers` find Cookie. To the right of it is its value in format like this `tph_uuid=xxx; tph_token=yyy`
+- `tph_token` is what is needed. Copy whatever value is after the equal sign (usually it is a 60 character long string)
+- set the token with command `gotg config set tg-access-token <your-token>`.
+- execute command `gotg account sync`. Be warned, that this command, if successful, replaces all other account configuration if was previosly set. (This is opposite to using `gotg account login`)
+
+### 2. Next step is to configure CDN.
+Telegra.ph no longer allows storing images on their servers, so this should be done via external servers. Currently the two supported options are `postimages.org` and `S3` compatible storage. For most users the first option is most suitable.
+
+First configure preferred cdn via command:
+```
+gotg config set preferred-cdn post-image
+```
+OR
+```
+gotg config set preferred-cdn s3
+```
+
+#### 2.a PostImages.org
+To configure this CDN you only need to have an account on the [postimages.org](https://postimages.org/) website and copy your personal API token from [this page](https://postimages.org/login/api).
+Then configure the program via following command:
+```
+gotg config set postimg-api-key <your-token>
+```
+Or you can choose to set it every time with `--post-img-key` flag or `POST_IMAGE_API_KEY` env value.
+
+#### 2.b S3 compatible storage
+If you chose this option, you should already know how to configure your S3 service.
+Configuration options are the following keys in config (set via `gotg config set <key> <value>`)
+   - aws-key-id
+   - aws-secret-access-key
+   - aws-region
+   - aws-endpoint
+   - aws-s3-bucket
+   - aws-s3-location: directory where files should be stored.
+   - aws-s3-public-url: Resulting url will be formed in format: [this public url]/[location]/[filename].
+The same configuration may be achieved via env values:
+```
+AWS_KEY_ID
+AWS_SECRET_ACCESS_KEY
+AWS_REGION
+AWS_ENDPOINT
+AWS_S3_BUCKET
+AWS_S3_LOCATION
+AWS_S3_PUBLIC_URL
+```
+Or by providing command line arguments (see help)
+
+## Posting
+
+When everything is configured, you can now use the program to post the articles.
+Just run the command
+```
+gotg post <path-to-folder>
+```
+Where path to folder should be absolute or relative path to the directory with images you want to post. If no path is specified, you will be promted to choose a directory, unless dialog windows are disabled.
+Images will be sorted in natural order, meaning that `2.png` is ordered before `10.png` unlike stardart file explorers, without the need to pad names with zeroes.
+
+#### Full list of configuration options:
+```
+--loglevel value                               level of logging for application (default: "INFO")
+--cache value                                  path to saved cache. If specified will use caching for CDN uploads
+--no-dialog, -s                                don't prompt window for user input (default: false)
+--parallel value, -p value                     set number of parallel file upload (default: 8)
+--cdn value                                    type of cdn to upload images to. Supported values are ['post-image', 's3']
+--browser, -a                                  auto open uploaded article in the browser (default: false)
+--title value, -t value                        specify the title of the article. If empty, then you will be prompted later. (default: false)
+--post-img-key value                           API key for post-image CDN [$POST_IMAGE_API_KEY]
+--aws-s3-bucket value, --bucket value          name of the bucket for S3 CDN [$AWS_S3_BUCKET]
+--aws-s3-location value, --location value      location in the bucket for S3 CDN [$AWS_S3_LOCATION]
+--aws-s3-public-url value, --public-url value  prefix for formed URL for S3 CDN [$AWS_S3_PUBLIC_URL]
+```
 
 ---
 
 ## Starting from sourse
 
-### Golang version 1.19 or higher
+### Golang version 1.24 or higher
 
 Download sourse folder
 Build with
@@ -74,60 +125,8 @@ OR
 make build
 ```
 
-### Usage
+## Since part of the programm is just uploading files to CDN, it was decided to allow it's usage as separate command
 ```
-tg-upload run config.yaml
+gotg upload [files...]
 ```
-
-Global commands:
-```
-NAME:
-   tg-upload - cli tool to automate uploading to telegra.ph
-
-USAGE:
-   tg-upload [global options] command [command options] [arguments...]
-
-COMMANDS:
-   version  
-   run      post telegraph article according to specified config
-   upload   upload file to telegraph CDN
-   help, h  Shows a list of commands or help for one command
-```
-
-Run usage (post article):
-```
-USAGE:
-   tg-upload run [command options] <path-to-config>
-
-OPTIONS:
-   --loglevel value  level of logging for application
-   --cache value     path to saved cache. If specified will use caching for CDN uploads
-   --no-dialog, -s   don't prompt window for user input (default: false)
-   --help, -h        show help (default: false)
-```
-
-Upload usage (post article):
-```
-USAGE:
-   tg-upload upload [command options] <file-path> [more-files...]
-
-OPTIONS:
-   --loglevel value  level of logging for application
-   --cache value     path to saved cache. If specified will use caching for CDN uploads
-   --output value    path to saved output file
-   --plain           use plain output format (default: false)
-   --help, -h        show help (default: false)
-```
-
----
-
-## Accessing telegraph access token
-- Go to https://telegra.ph/
-- Open devtools (Right click on path -> Inspect OR F12)
-- Open ```Network``` tab
-- Reload page (Ctrl+R)
-- Filter requests by ```Fetch/XHR```
-- In list of requests choose ```check```
-- In opened bar choose ```cookies```
-- In ```Request cookies``` find cookies with name ```tph_token``` 
-- Now you can copy its value
+Pathes could be as list of individual files and whole directories.

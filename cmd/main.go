@@ -3,60 +3,49 @@ package main
 import (
 	"context"
 	"os"
-	"os/signal"
-	"syscall"
 
 	"github.com/urfave/cli/v2"
-	"go.uber.org/zap"
 
+	accountcmd "github.com/bohdanch-w/go-tgupload/cmd/account"
+	configcmd "github.com/bohdanch-w/go-tgupload/cmd/config"
 	postcmd "github.com/bohdanch-w/go-tgupload/cmd/post"
 	uploadcmd "github.com/bohdanch-w/go-tgupload/cmd/upload"
 	versioncmd "github.com/bohdanch-w/go-tgupload/cmd/version"
-	"github.com/bohdanch-w/go-tgupload/helpers"
+
+	whcontext "github.com/bohdanch-w/wheel/context"
+	whlogger "github.com/bohdanch-w/wheel/logger"
 )
 
-func application(logger *zap.Logger) *cli.App {
+func application(logger whlogger.Logger) *cli.App {
 	return &cli.App{
 		Name:  "tg-upload",
 		Usage: "cli tool to automate uploading to telegra.ph",
-		Flags: []cli.Flag{},
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:    "profile",
+				EnvVars: []string{"GOTG_PROFILE"},
+			},
+		},
 		Commands: []*cli.Command{
 			versioncmd.Version(),
+			configcmd.NewCMD(),
+			accountcmd.NewCMD(),
 			postcmd.NewCMD(logger),
 			uploadcmd.NewCMD(logger),
 		},
-		DefaultCommand: postcmd.Name,
+		DefaultCommand: versioncmd.Name,
 	}
-}
-
-func _main() int {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	go func() {
-		shutdown := make(chan os.Signal, 1)
-		signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM)
-
-		select {
-		case <-ctx.Done():
-			return
-		case <-shutdown:
-			cancel()
-		}
-	}()
-
-	mainLogger := helpers.MustLogger()
-	defer func() { _ = mainLogger.Sync() }()
-
-	if err := application(mainLogger).RunContext(ctx, os.Args); err != nil {
-		mainLogger.Warn("command failed", zap.Error(err))
-
-		return 1
-	}
-
-	return 0
 }
 
 func main() {
-	os.Exit(_main())
+	mainLogger := whlogger.NewPtermLogger(whlogger.Info)
+	ctx := whcontext.OSInterruptContext(context.Background())
+
+	if err := application(mainLogger).RunContext(ctx, os.Args); err != nil {
+		mainLogger.WithError(err).Warnf("command failed")
+
+		os.Exit(1)
+	}
+
+	os.Exit(0)
 }
